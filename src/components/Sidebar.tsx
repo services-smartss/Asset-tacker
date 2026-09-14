@@ -106,7 +106,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
       <nav
         aria-label="Main navigation"
         className={cn(
-          "border-border bg-card/80 hidden border-r backdrop-blur-sm transition-[width] duration-300 ease-in-out lg:flex lg:flex-col",
+          "border-border bg-muted/40 hidden border-r transition-[width] duration-300 ease-in-out lg:flex lg:flex-col",
           collapsed ? "w-16" : "w-64",
         )}
       >
@@ -195,11 +195,15 @@ const Sidebar = ({ initialCollapsed = false }) => {
                     "group flex items-center gap-3 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                     collapsed && "justify-center px-2",
                     active
-                      ? "bg-accent text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
+                      ? "bg-primary text-primary-foreground font-medium shadow-[var(--shadow-sm)]"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   );
                   const content = (
-                    <Link href={item.href} className={linkClasses}>
+                    <Link
+                      href={item.href}
+                      className={linkClasses}
+                      aria-current={active ? "page" : undefined}
+                    >
                       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {!collapsed && (
                         <span className="truncate">{item.label}</span>
@@ -232,7 +236,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
                   defaultOpen={hasActiveChild}
                   className="mb-2"
                 >
-                  <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between px-2.5 py-1.5 text-xs font-medium tracking-wide uppercase transition-colors">
+                  <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between px-2.5 py-1.5 text-xs font-medium tracking-wider uppercase transition-colors">
                     {section.title}
                     <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
                   </CollapsibleTrigger>
@@ -244,7 +248,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
             return (
               <div key={section.title} className="mb-2">
                 {!collapsed && (
-                  <p className="text-muted-foreground px-2.5 py-1.5 text-xs font-medium tracking-wide uppercase">
+                  <p className="text-muted-foreground px-2.5 py-1.5 text-xs font-medium tracking-wider uppercase">
                     {section.title}
                   </p>
                 )}
@@ -260,8 +264,8 @@ const Sidebar = ({ initialCollapsed = false }) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  size="sm"
-                  className={cn("w-full", collapsed && "w-10 p-0")}
+                  size={collapsed ? "icon" : "default"}
+                  className={cn("w-full shadow-none", collapsed && "w-10")}
                 >
                   <SidebarPlusIcon
                     className={collapsed ? "h-4 w-4" : "mr-2 h-4 w-4"}

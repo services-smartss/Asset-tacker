@@ -47,14 +47,15 @@ export default function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "touch-target flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[10px] font-medium transition-colors",
+                "touch-target flex flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-[10px] font-medium transition-colors",
                 active
-                  ? "text-primary"
+                  ? "text-foreground bg-accent"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon className={cn("h-5 w-5", active && "text-primary")} />
+              <Icon className="h-5 w-5" aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           );
@@ -63,19 +64,15 @@ export default function MobileNav() {
         {/* Scan button */}
         <Link
           href="/scanner"
+          aria-current={isActivePath(pathname, "/scanner") ? "page" : undefined}
           className={cn(
-            "touch-target flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[10px] font-medium transition-colors",
+            "touch-target flex flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-[10px] font-medium transition-colors",
             isActivePath(pathname, "/scanner")
-              ? "text-primary"
+              ? "text-foreground bg-accent"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <ScanLine
-            className={cn(
-              "h-5 w-5",
-              isActivePath(pathname, "/scanner") && "text-primary",
-            )}
-          />
+          <ScanLine className="h-5 w-5" aria-hidden="true" />
           <span>Scan</span>
         </Link>
 
@@ -115,11 +112,12 @@ export default function MobileNav() {
                         <Link
                           key={item.href}
                           href={item.href}
+                          aria-current={active ? "page" : undefined}
                           onClick={() => setSheetOpen(false)}
                           className={cn(
                             "touch-target flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                             active
-                              ? "bg-primary/10 text-primary"
+                              ? "bg-primary text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
                         >

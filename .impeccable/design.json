@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T17:20:00.000Z",
+  "title": "Design System: Asset Tracker",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "hsl(220 9% 12%)",
+        "tonalRamp": [
+          "#121418",
+          "#1C1F24",
+          "#2A2E35",
+          "#4A4F58",
+          "#7A7E87",
+          "#B4B7BD",
+          "#E6E8EB",
+          "#F4F5F6"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "hsl(0 0% 100%)",
+        "tonalRamp": [
+          "#1C1F24",
+          "#3A3E46",
+          "#7A7E87",
+          "#B4B7BD",
+          "#E6E8EB",
+          "#F4F5F6",
+          "#FAFAFA",
+          "#FFFFFF"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Title", "purpose": "Page h1 only, 1.5rem semibold." },
+      "body": { "displayName": "Body", "purpose": "UI copy and table cells." },
+      "label": { "displayName": "Label", "purpose": "Section labels and fleet captions." }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgb(0 0 0 / 0.03), 0 1px 3px rgb(0 0 0 / 0.04)",
+        "purpose": "Selected nav and rest cards."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Color and width transitions on the shell."
+      }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled action in the shell (Quick Create).",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Quick Create</button>",
+      "css": ".ds-btn-primary { background: #1C1F24; color: #FAFAFA; padding: 8px 16px; border: none; border-radius: 10px; font: 500 14px Geist, system-ui, sans-serif; cursor: pointer; } .ds-btn-primary:hover { background: #2A2E35; } .ds-btn-primary:focus-visible { outline: 2px solid #1C1F24; outline-offset: 2px; }"
+    },
+    {
+      "name": "Nav item (current)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Current destination in the sidebar.",
+      "html": "<a class=\"ds-nav-active\" href=\"#\">Dashboard</a>",
+      "css": ".ds-nav-active { display: flex; align-items: center; gap: 12px; background: #1C1F24; color: #FAFAFA; padding: 6px 10px; border-radius: 8px; font: 500 14px Geist, system-ui, sans-serif; text-decoration: none; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Work-surface container with hairline, not nested cards.",
+      "html": "<div class=\"ds-card\">Fleet</div>",
+      "css": ".ds-card { background: #fff; color: #1C1F24; border: 1px solid #E6E8EB; border-radius: 10px; padding: 16px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The night-shift console.",
+    "overview": "An Operate surface for people who already know what an asset is. The shell is a second, slightly cooler neutral than the work surface so the eye lands on counts and the next action, not on chrome. Brand lives in precise selected states, tabular numbers, and one primary create control — not in display type or decoration.",
+    "keyCharacteristics": [
+      "Geist sans at a tight product scale; headings at 1.5rem semibold.",
+      "Ink as primary fill for the thing you should do.",
+      "Paper content pane; muted rail.",
+      "Empty states name the missing object and offer a real route."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "One family, one ink, one radius family. Accent color is for primary action, current selection, and semantic status only.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Is Not Brand Rule",
+        "body": "Chart slices and status chips use the semantic set; they never restyle the shell.",
+        "section": "colors"
+      },
+      {
+        "name": "The Heading Carries Itself Rule",
+        "body": "No kicker or eyebrow above an h1.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do put fleet counts or the first-create action above greeting weight.",
+      "Do collapse empty charts and maps so the next action stays in the first viewport.",
+      "Do keep Quick Create as the only filled primary in the shell."
+    ],
+    "donts": [
+      "Don't use gradient text, glass chrome, or display fonts on the dashboard.",
+      "Don't show \"No data to display yet\" without a route to create or locate.",
+      "Don't duplicate the product name in the top bar when the sidebar already names it (desktop)."
+    ]
+  }
+}

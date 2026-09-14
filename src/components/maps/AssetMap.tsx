@@ -5,6 +5,9 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useTheme } from "next-themes";
 import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 interface LocationMarker {
   id: string;
@@ -122,12 +125,18 @@ export default function AssetMap({
 
   if (locations.length === 0) {
     return (
-      <div className="text-muted-foreground flex h-[420px] items-center justify-center rounded-lg border border-dashed text-sm">
-        <div className="text-center">
-          <MapPin className="text-muted-foreground/40 mx-auto mb-2 h-8 w-8" />
-          <p>No locations with coordinates.</p>
-          <p className="text-xs">Edit a location to geocode its address.</p>
-        </div>
+      <div className="border-border rounded-lg border">
+        <EmptyState
+          compact
+          icon={<MapPin className="h-6 w-6" aria-hidden="true" />}
+          title="No mapped locations"
+          description="Add coordinates to a location to see the fleet on the map."
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link href="/locations">Open locations</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }

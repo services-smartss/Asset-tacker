@@ -10,6 +10,11 @@ import Breadcrumb from "@/components/Breadcrumb";
 import AssetStatusChart from "@/components/charts/AssetStatusChart";
 import DismissibleHelpTip from "@/components/DismissibleHelpTip";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
+import DashboardFleetStrip from "@/components/dashboard/DashboardFleetStrip";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Boxes } from "lucide-react";
+import Link from "next/link";
 
 import { getOrganizationContext } from "@/lib/organization-context";
 import prisma from "@/lib/prisma";
@@ -35,15 +40,13 @@ export default async function DashboardPage() {
 
   if (!isAdmin && ctx?.userId) {
     return (
-      <main>
+      <main className="mx-auto w-full max-w-6xl">
         <Breadcrumb
           options={[{ label: "Dashboard", href: "/dashboard", current: true }]}
         />
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          My Dashboard
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Your assets, requests, and tickets at a glance
+          Your assets, requests, and tickets
         </p>
         <div className="mt-6">
           <DashboardGrid isAdmin={false} />
@@ -96,7 +99,6 @@ export default async function DashboardPage() {
       },
     });
     mapLocations = locationsWithCoords.map((loc) => {
-      // Sum assets at this location + all children + grandchildren
       let total = loc._count.asset;
       for (const child of loc.children) {
         total += child._count.asset;
@@ -117,12 +119,10 @@ export default async function DashboardPage() {
   }
 
   const statusCounts = new Map<string, number>();
-  let totalCounted = 0;
 
   statusDistribution.forEach((entry) => {
     const key = entry.statustypeid ?? "__unassigned";
     statusCounts.set(key, entry.count);
-    totalCounted += entry.count;
   });
 
   const chartData = [];
@@ -152,7 +152,6 @@ export default async function DashboardPage() {
     });
   });
 
-  // Time-based greeting
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -166,35 +165,63 @@ export default async function DashboardPage() {
         .catch(() => null)
     : null;
   const firstName = await userName;
+  const fleetEmpty = assetCount === 0 && accessoryCount === 0;
 
   return (
-    <main>
+    <main className="mx-auto w-full max-w-6xl">
       <Breadcrumb
         options={[
           { label: "Home", href: "/" },
           { label: "Dashboard", href: "/dashboard" },
         ]}
       />
-      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        {greeting}
-        {firstName ? `, ${firstName}` : ""}
-      </h1>
-      <p className="text-muted-foreground mt-1 text-sm">
-        Overview of your asset management system
-      </p>
+      <header className="mt-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {greeting}
+          {firstName ? `, ${firstName}` : ""}. Fleet counts and what to do next.
+        </p>
+      </header>
       <DismissibleHelpTip id="dashboard-welcome">
         Welcome to your dashboard! Here you can see a quick overview of your
         assets, accessories, and users. Use the sidebar to navigate to specific
         sections, or click the stat cards below to jump to detailed views.
       </DismissibleHelpTip>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-2">
-        <AssetStatusChart data={chartData} title="Asset Status" />
-        <AssetStatusChart data={accChartData} title="Accessory Status" />
+
+      <div className="mt-6">
+        <DashboardFleetStrip
+          assets={assetCount}
+          accessories={accessoryCount}
+          users={userCount}
+        />
       </div>
+
+      {fleetEmpty && (
+        <div className="border-border mt-4 rounded-lg border">
+          <EmptyState
+            compact
+            icon={<Boxes className="h-6 w-6" aria-hidden="true" />}
+            title="Start the fleet"
+            description="Create the first asset so status charts and the map have something to show."
+            action={
+              <Button asChild size="sm">
+                <Link href="/assets/create">Add first asset</Link>
+              </Button>
+            }
+          />
+        </div>
+      )}
+
+      {!fleetEmpty && (
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 lg:grid-cols-2">
+          <AssetStatusChart data={chartData} title="Asset Status" />
+          <AssetStatusChart data={accChartData} title="Accessory Status" />
+        </div>
+      )}
       <div className="mt-4 sm:mt-6">
         <Suspense
           fallback={
-            <div className="text-muted-foreground flex h-[420px] items-center justify-center rounded-lg border text-sm">
+            <div className="text-muted-foreground flex h-[180px] items-center justify-center rounded-lg border text-sm">
               Loading map...
             </div>
           }
@@ -206,7 +233,7 @@ export default async function DashboardPage() {
           />
         </Suspense>
       </div>
-      <div className="mt-6 sm:mt-8 md:mt-10">
+      <div className="mt-6 sm:mt-8">
         <DashboardGrid
           serverStats={{
             assets: assetCount,

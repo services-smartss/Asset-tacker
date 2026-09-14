@@ -314,10 +314,13 @@ function Navigation() {
   }, []);
 
   return (
-    <nav className="border-border/60 bg-background/95 border-b backdrop-blur-sm">
-      <div className="flex h-16 items-center px-4 md:px-6">
+    <nav className="border-border bg-background border-b">
+      <div className="flex h-14 items-center px-4 md:px-6">
         <div className="flex flex-1 items-center gap-4">
-          <Link href="/dashboard" className="text-lg font-bold">
+          <Link
+            href="/dashboard"
+            className="text-foreground text-base font-semibold tracking-tight lg:hidden"
+          >
             Asset Tracker
           </Link>
         </div>

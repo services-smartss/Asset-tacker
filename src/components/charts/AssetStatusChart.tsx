@@ -1,6 +1,10 @@
 "use client";
 
 import { Label, Pie, PieChart } from "recharts";
+import Link from "next/link";
+import { Boxes, Puzzle } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -43,23 +47,50 @@ function AssetStatusChart({
   data,
   title = "Asset status overview",
   description,
+  emptyHref,
+  emptyTitle,
+  emptyDescription,
+  emptyActionLabel,
 }: {
   data: Array<{ name: string; value: number }>;
   title?: string;
   description?: string;
+  emptyHref?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyActionLabel?: string;
 }) {
   const hasData = data?.length && data.some((item) => item.value > 0);
 
   if (!hasData) {
+    const isAccessory = title.toLowerCase().includes("accessor");
+    const href = emptyHref ?? (isAccessory ? "/accessories/create" : "/assets/create");
+    const actionLabel =
+      emptyActionLabel ?? (isAccessory ? "Add accessory" : "Add first asset");
+    const Icon = isAccessory ? Puzzle : Boxes;
+
     return (
-      <Card className="flex flex-col">
-        <CardHeader className="items-center pb-0">
-          <CardTitle>{title}</CardTitle>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-1 items-center justify-center py-10">
-          <p className="text-muted-foreground text-sm">
-            No data to display yet.
-          </p>
+        <CardContent className="pt-0">
+          <EmptyState
+            compact
+            icon={<Icon className="h-6 w-6" aria-hidden="true" />}
+            title={emptyTitle ?? "Nothing to chart yet"}
+            description={
+              emptyDescription ??
+              (isAccessory
+                ? "Add accessories to see how they sit across statuses."
+                : "Add an asset to see status mix for the fleet.")
+            }
+            action={
+              <Button asChild size="sm">
+                <Link href={href}>{actionLabel}</Link>
+              </Button>
+            }
+          />
         </CardContent>
       </Card>
     );
@@ -90,8 +121,8 @@ function AssetStatusChart({
 
   return (
     <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>{title}</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent className="flex-1 pb-0">

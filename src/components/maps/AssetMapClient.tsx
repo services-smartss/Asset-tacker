@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 const AssetMap = dynamic(() => import("./AssetMap"), {
   ssr: false,
   loading: () => (
-    <div className="text-muted-foreground flex h-[300px] items-center justify-center rounded-lg border text-sm">
+    <div className="text-muted-foreground flex h-[180px] items-center justify-center rounded-lg border text-sm">
       Loading map...
     </div>
   ),

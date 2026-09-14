@@ -59,7 +59,7 @@ export default function AppShell({
           <OfflineSyncIndicator />
           <main
             id="main-content"
-            className="flex-1 overflow-y-auto p-4 pb-20 md:p-8 md:pb-8"
+            className="flex-1 overflow-y-auto p-5 pb-24 md:p-6 md:pb-8"
           >
             <PageTransition>{children}</PageTransition>
           </main>

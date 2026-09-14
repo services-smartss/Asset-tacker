@@ -1232,7 +1232,7 @@ export default function DashboardGrid({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Custom Widgets</h2>
+        <h2 className="text-base font-semibold tracking-tight">Widgets</h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
