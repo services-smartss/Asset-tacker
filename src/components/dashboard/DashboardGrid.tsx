@@ -27,6 +27,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { GripVertical, X, Plus } from "lucide-react";
+import Link from "next/link";
 import { WIDGET_DEFINITIONS } from "./WidgetRegistry";
 
 const AssetMap = lazy(() => import("@/components/maps/AssetMap"));
@@ -590,7 +591,12 @@ function MyTicketsWidget() {
           className="flex items-center justify-between py-2 first:pt-0 last:pb-0"
         >
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{t.title}</p>
+            <Link
+              href="/tickets"
+              className="truncate text-sm font-medium hover:underline"
+            >
+              {t.title}
+            </Link>
           </div>
           <div className="flex shrink-0 gap-1">
             <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs">

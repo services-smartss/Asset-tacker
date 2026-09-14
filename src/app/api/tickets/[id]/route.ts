@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { requireApiAdmin, requireNotDemoMode } from "@/lib/api-auth";
+import {
+  requireApiAdmin,
+  requireApiAuth,
+  requireNotDemoMode,
+} from "@/lib/api-auth";
 import { createFreshdeskClient } from "@/lib/freshdesk";
 import { logger } from "@/lib/logger";
 import { getOrganizationContext } from "@/lib/organization-context";
@@ -11,23 +15,138 @@ import {
   notifyTicketAssigned,
   notifyTicketStatusChanged,
 } from "@/lib/notifications";
+import { uuidSchema } from "@/lib/validation";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+const ticketInclude = {
+  user_tickets_createdByTouser: {
+    select: {
+      userid: true,
+      username: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+    },
+  },
+  user_tickets_assignedToTouser: {
+    select: {
+      userid: true,
+      username: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+    },
+  },
+  ticket_comments: {
+    include: {
+      user: {
+        select: {
+          userid: true,
+          username: true,
+          firstname: true,
+          lastname: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc" as const,
+    },
+  },
+};
+
+function mapTicket<
+  T extends {
+    user_tickets_createdByTouser: {
+      userid: string;
+      username: string | null;
+      firstname: string;
+      lastname: string;
+      email: string | null;
+    };
+    user_tickets_assignedToTouser: {
+      userid: string;
+      username: string | null;
+      firstname: string;
+      lastname: string;
+      email: string | null;
+    } | null;
+    ticket_comments: unknown[];
+  },
+>(rawTicket: T) {
+  return {
+    ...rawTicket,
+    creator: rawTicket.user_tickets_createdByTouser,
+    assignee: rawTicket.user_tickets_assignedToTouser,
+    comments: rawTicket.ticket_comments,
+  };
+}
+
 /**
  * GET /api/tickets/[id]
- * Fetch a single ticket from Freshdesk
+ * Local ticket by UUID (creator or org admin). Freshdesk via ?source=freshdesk.
  */
 export async function GET(req: Request, { params }: RouteParams) {
+  const url = new URL(req.url);
+  const { id } = await params;
+
+  if (url.searchParams.get("source") === "freshdesk") {
+    return getFreshdeskTicket(id);
+  }
+
+  return getLocalTicket(id);
+}
+
+async function getLocalTicket(id: string) {
+  try {
+    if (!uuidSchema.safeParse(id).success) {
+      return NextResponse.json({ error: "Invalid ticket ID" }, { status: 400 });
+    }
+
+    const user = await requireApiAuth();
+    const orgContext = await getOrganizationContext();
+    const orgId = orgContext?.organization?.id;
+
+    const rawTicket = await prisma.tickets.findFirst({
+      where: {
+        id,
+        ...(orgId
+          ? { user_tickets_createdByTouser: { organizationId: orgId } }
+          : {}),
+      },
+      include: ticketInclude,
+    });
+
+    if (!rawTicket) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    }
+
+    if (!user.isAdmin && rawTicket.createdBy !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.json(mapTicket(rawTicket));
+  } catch (error) {
+    logger.error("GET /api/tickets/[id] error", { error });
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json(
+      { error: "Failed to fetch ticket" },
+      { status: 500 },
+    );
+  }
+}
+
+async function getFreshdeskTicket(id: string) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.isadmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await params;
     const ticketId = parseInt(id, 10);
 
     if (isNaN(ticketId)) {
@@ -69,7 +188,7 @@ export async function GET(req: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ticket: result.data });
   } catch (error) {
-    logger.error("GET /api/tickets/[id] error", { error });
+    logger.error("GET /api/tickets/[id] (freshdesk) error", { error });
     return NextResponse.json(
       { error: "Failed to fetch ticket" },
       { status: 500 },
@@ -120,35 +239,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     const rawTicket = await prisma.tickets.update({
       where: { id },
       data: updateData,
-      include: {
-        user_tickets_createdByTouser: {
-          select: {
-            userid: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
-        user_tickets_assignedToTouser: {
-          select: {
-            userid: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
-      },
+      include: ticketInclude,
     });
 
-    // Map Prisma relation names to expected interface names
-    const ticket = {
-      ...rawTicket,
-      creator: rawTicket.user_tickets_createdByTouser,
-      assignee: rawTicket.user_tickets_assignedToTouser,
-      comments: [],
-    };
+    const ticket = mapTicket(rawTicket);
 
     if (
       assignedTo &&

@@ -18,6 +18,13 @@ export interface TicketComment {
   };
 }
 
+export interface TicketAdminUser {
+  userid: string;
+  username: string | null;
+  firstname: string;
+  lastname: string;
+}
+
 export interface Ticket {
   id: string;
   title: string;

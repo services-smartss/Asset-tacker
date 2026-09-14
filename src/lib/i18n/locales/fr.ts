@@ -18,7 +18,7 @@ const fr: Record<string, string> = {
   "nav.licenceCategories": "Cat\u00e9gories de licences",
   "nav.models": "Mod\u00e8les",
   "nav.statusTypes": "Types de statut",
-  "nav.tickets": "Tickets IT",
+  "nav.tickets": "Tickets",
   "nav.approvals": "Approbations",
   "nav.qrScanner": "Scanner QR",
   "nav.reports": "Rapports",

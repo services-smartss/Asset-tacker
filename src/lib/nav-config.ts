@@ -140,7 +140,7 @@ export const navSections: NavSection[] = [
     title: "Tools",
     items: [
       { label: "Advanced Search", href: "/search", icon: Filter },
-      { label: "IT Tickets", href: "/tickets", icon: Ticket },
+      { label: "Tickets", href: "/tickets", icon: Ticket },
       {
         label: "Maintenance",
         href: "/maintenance",

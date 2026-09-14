@@ -373,9 +373,9 @@ const Sidebar = ({ initialCollapsed = false }) => {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/user/tickets">
+                <Link href="/tickets">
                   <Bell className="mr-2 h-4 w-4" />
-                  My Tickets
+                  Tickets
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

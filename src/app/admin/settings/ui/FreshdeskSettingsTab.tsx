@@ -153,8 +153,8 @@ export default function FreshdeskSettingsTab({
             )}
           </CardTitle>
           <CardDescription>
-            Connect to Freshdesk to view IT support tickets for Hardware
-            Requests and Problems
+            Optional API integration. The in-app Tickets inbox uses local
+            tickets and does not depend on Freshdesk.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -242,8 +242,9 @@ export default function FreshdeskSettingsTab({
         <CardHeader>
           <CardTitle>Ticket Types</CardTitle>
           <CardDescription>
-            The following Freshdesk ticket types will be synced and displayed in
-            your IT Tickets section
+            These Freshdesk ticket types can be fetched with
+            GET /api/tickets?source=freshdesk. They are not shown in the in-app
+            Tickets inbox.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -252,9 +253,8 @@ export default function FreshdeskSettingsTab({
             <Badge variant="secondary">Problem</Badge>
           </div>
           <p className="text-muted-foreground mt-4 text-sm">
-            Tickets with these types will appear in the IT Tickets page. Make
-            sure these ticket types are configured in your Freshdesk admin
-            settings.
+            Make sure these ticket types are configured in your Freshdesk admin
+            settings if you use the Freshdesk API.
           </p>
         </CardContent>
       </Card>

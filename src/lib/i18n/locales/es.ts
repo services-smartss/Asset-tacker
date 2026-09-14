@@ -19,7 +19,7 @@ const es: Record<string, string> = {
   "nav.licenceCategories": "Categorias de licencias",
   "nav.models": "Modelos",
   "nav.statusTypes": "Tipos de estado",
-  "nav.tickets": "Tickets de TI",
+  "nav.tickets": "Tickets",
   "nav.approvals": "Aprobaciones",
   "nav.qrScanner": "Escaner QR",
   "nav.reports": "Informes",

@@ -68,7 +68,9 @@ export function TicketModal({
   };
 
   const handleAssigneeChange = async (userId: string) => {
-    await onUpdate(ticket.id, { assignedTo: userId || null });
+    await onUpdate(ticket.id, {
+      assignedTo: userId === "unassigned" ? null : userId,
+    });
   };
 
   const handleAddComment = async () => {
