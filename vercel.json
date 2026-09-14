@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node prisma/set-schema.mjs && prisma generate && prisma migrate deploy && next build",
+  "buildCommand": "node prisma/set-schema.mjs && prisma generate && node prisma/ensure-migrations-table.mjs && prisma migrate deploy && next build",
   "installCommand": "bun install",
   "crons": [
     {

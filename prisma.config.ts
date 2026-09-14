@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { defineConfig } from "prisma/config";
+import { normalizeDatabaseUrl } from "./prisma/db-url.mjs";
 
 // Load .env manually since Prisma CLI doesn't auto-load it
 function loadEnv() {
@@ -29,6 +30,25 @@ function loadEnv() {
 
 loadEnv();
 
+// Prefer a direct (unpooled) URL for Prisma CLI / migrate.
+// Neon/Vercel pooled URLs (*-pooler.*) break migrate because SET search_path
+// and advisory locks are not reliable through PgBouncer transaction pooling.
+const datasourceUrl = normalizeDatabaseUrl(
+  process.env.DIRECT_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL ||
+    "",
+  { forMigrate: true },
+);
+
+if (!datasourceUrl) {
+  throw new Error(
+    "DATABASE_URL is empty. Set DATABASE_URL in Vercel → Settings → Environment Variables (Production + Build). For Neon, also set DIRECT_URL to the non-pooled connection string.",
+  );
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -36,6 +56,6 @@ export default defineConfig({
     seed: "node prisma/seed.js",
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? "",
+    url: datasourceUrl,
   },
 });

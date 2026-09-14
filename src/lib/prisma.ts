@@ -1,16 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { normalizeDatabaseUrl } from "@/lib/db-url";
+
+const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL ?? "");
 
 // Determine SSL configuration based on environment
 // For Supabase and other cloud providers, SSL is required
 const isCloudDatabase =
   process.env.DATABASE_SSL === "true" ||
-  process.env.DATABASE_URL?.includes("supabase") ||
-  process.env.DATABASE_URL?.includes("pooler.supabase");
+  connectionString.includes("supabase") ||
+  connectionString.includes("pooler.supabase") ||
+  connectionString.includes("neon.tech");
 
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   ssl: isCloudDatabase ? { rejectUnauthorized: false } : false,
   // Serverless-optimized pool settings:
   // Keep pool small — each Vercel function gets its own pool,
