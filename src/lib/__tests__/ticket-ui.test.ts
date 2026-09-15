@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  displayTicketNumber,
   displayUserName,
   filterInboxTickets,
   shortTicketId,
   ticketStatusLabel,
+  ticketTypeLabel,
 } from "../ticket-ui";
 
 const adminId = "admin-1";
 const tickets = [
   {
     id: "550e8400-e29b-41d4-a716-446655440000",
+    ticketNumber: 12,
     title: "Laptop will not boot",
     description: "Black screen after login",
+    type: "incident",
+    category: "Hardware",
     status: "new",
     priority: "high",
     assignedTo: null,
@@ -19,18 +24,24 @@ const tickets = [
   },
   {
     id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    ticketNumber: 13,
     title: "Need extra monitor",
     description: "Docking station request",
-    status: "in_progress",
+    type: "request",
+    category: "Hardware",
+    status: "processing",
     priority: "medium",
     assignedTo: adminId,
     creator: { firstname: "Grace", lastname: "Hopper" },
   },
   {
     id: "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    ticketNumber: 14,
     title: "Printer jam",
     description: null,
-    status: "completed",
+    type: "incident",
+    category: "Printer",
+    status: "solved",
     priority: "low",
     assignedTo: "other-admin",
     creator: { firstname: "Alan", lastname: "Turing" },
@@ -51,9 +62,18 @@ describe("ticket-ui", () => {
     expect(shortTicketId(tickets[0].id)).toBe("550e8400");
   });
 
-  it("labels ticket status", () => {
-    expect(ticketStatusLabel("in_progress")).toBe("In Progress");
+  it("shows a sequential ticket number", () => {
+    expect(displayTicketNumber(tickets[0])).toBe("12");
+    expect(displayTicketNumber({ id: tickets[0].id })).toBe("550e8400");
+  });
+
+  it("labels GLPI ticket status and type", () => {
+    expect(ticketStatusLabel("processing")).toBe("Processing");
+    expect(ticketStatusLabel("in_progress")).toBe("Processing");
+    expect(ticketStatusLabel("completed")).toBe("Solved");
     expect(ticketStatusLabel("unknown")).toBe("unknown");
+    expect(ticketTypeLabel("incident")).toBe("Incident");
+    expect(ticketTypeLabel("request")).toBe("Request");
   });
 
   it("formats a user name", () => {
@@ -93,7 +113,13 @@ describe("ticket-ui", () => {
 
   it("filters by status, priority, and search", () => {
     expect(
-      filterInboxTickets(tickets, { ...baseOptions, statusFilter: "completed" }),
+      filterInboxTickets(tickets, { ...baseOptions, statusFilter: "solved" }),
+    ).toHaveLength(1);
+    expect(
+      filterInboxTickets(tickets, {
+        ...baseOptions,
+        statusFilter: "completed",
+      }),
     ).toHaveLength(1);
     expect(
       filterInboxTickets(tickets, { ...baseOptions, priorityFilter: "high" }),
@@ -102,7 +128,10 @@ describe("ticket-ui", () => {
       filterInboxTickets(tickets, { ...baseOptions, searchQuery: "ada" }),
     ).toHaveLength(1);
     expect(
-      filterInboxTickets(tickets, { ...baseOptions, searchQuery: "550e8400" }),
+      filterInboxTickets(tickets, { ...baseOptions, searchQuery: "12" }),
     ).toHaveLength(1);
+    expect(
+      filterInboxTickets(tickets, { ...baseOptions, searchQuery: "incident" }),
+    ).toHaveLength(2);
   });
 });

@@ -72,6 +72,17 @@ export async function POST(
       },
     });
 
+    if (user.isAdmin && !ticket.assignedTo && ticket.status === "new") {
+      await prisma.tickets.update({
+        where: { id },
+        data: {
+          assignedTo: user.id,
+          status: "processing",
+          updatedAt: new Date(),
+        },
+      });
+    }
+
     // Fire-and-forget: notify ticket creator about the new comment (skip self-notifications)
     const creator = ticket.user_tickets_createdByTouser;
     if (creator?.email && creator.userid !== user.id) {

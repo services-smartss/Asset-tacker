@@ -30,8 +30,10 @@ interface KanbanBoardProps {
 
 const STATUSES = [
   { id: "new", label: "New", color: "bg-blue-500" },
-  { id: "in_progress", label: "In Progress", color: "bg-yellow-500" },
-  { id: "completed", label: "Completed", color: "bg-green-500" },
+  { id: "processing", label: "Processing", color: "bg-yellow-500" },
+  { id: "pending", label: "Pending", color: "bg-purple-500" },
+  { id: "solved", label: "Solved", color: "bg-green-500" },
+  { id: "closed", label: "Closed", color: "bg-gray-500" },
 ];
 
 export default function KanbanBoard({
@@ -177,7 +179,7 @@ export default function KanbanBoard({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-5">
           {STATUSES.map((status) => (
             <TicketColumn
               key={status.id}

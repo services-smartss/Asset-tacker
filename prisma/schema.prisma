@@ -439,6 +439,7 @@ model asset {
   componentCheckouts       ComponentCheckout[]
   userAssets               userAssets[]
   auditEntries             AuditEntry[]
+  tickets                  tickets[]
 
   @@index([assetname])
   @@index([statustypeid])
@@ -1006,22 +1007,33 @@ model ticket_comments {
 
 model tickets {
   id                            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketNumber                  Int               @unique @default(autoincrement())
   title                         String            @db.VarChar(255)
   description                   String?
+  type                          String            @default("incident") @db.VarChar(20)
+  category                      String?           @db.VarChar(50)
   status                        String            @default("new") @db.VarChar(20)
   priority                      String            @default("medium") @db.VarChar(20)
   createdBy                     String            @db.Uuid
   assignedTo                    String?           @db.Uuid
+  assetId                       String?           @db.Uuid
+  solution                      String?
+  solvedAt                      DateTime?         @db.Timestamp(6)
+  solvedBy                      String?           @db.Uuid
   createdAt                     DateTime          @default(now()) @db.Timestamp(6)
   updatedAt                     DateTime          @db.Timestamp(6)
   ticket_comments               ticket_comments[]
+  asset                         asset?            @relation(fields: [assetId], references: [assetid], onDelete: SetNull)
   user_tickets_assignedToTouser user?             @relation("tickets_assignedToTouser", fields: [assignedTo], references: [userid])
   user_tickets_createdByTouser  user              @relation("tickets_createdByTouser", fields: [createdBy], references: [userid], onDelete: Cascade)
+  user_tickets_solvedByTouser   user?             @relation("tickets_solvedByTouser", fields: [solvedBy], references: [userid], onDelete: SetNull)
 
   @@index([status])
   @@index([createdBy])
   @@index([assignedTo])
   @@index([createdAt])
+  @@index([type])
+  @@index([assetId])
   @@schema("public")
 }
 
@@ -1077,6 +1089,7 @@ model user {
   ticket_comments                  ticket_comments[]
   tickets_tickets_assignedToTouser tickets[]                 @relation("tickets_assignedToTouser")
   tickets_tickets_createdByTouser  tickets[]                 @relation("tickets_createdByTouser")
+  tickets_tickets_solvedByTouser   tickets[]                 @relation("tickets_solvedByTouser")
   user_preferences                 user_preferences?
   consumable_checkouts             consumable_checkouts[]
   userAccessoires                  userAccessoires[]

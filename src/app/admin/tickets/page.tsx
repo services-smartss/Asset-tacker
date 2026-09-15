@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
 import KanbanBoard from "./ui/KanbanBoard";
 import prisma from "@/lib/prisma";
+import { mapTicket, ticketInclude } from "@/lib/ticket-query";
 
 export const metadata = {
   title: "Tickets - Asset Tracker",
@@ -12,53 +13,13 @@ export const metadata = {
 
 async function getTickets() {
   const rawTickets = await prisma.tickets.findMany({
-    include: {
-      user_tickets_createdByTouser: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      },
-      user_tickets_assignedToTouser: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      },
-      ticket_comments: {
-        include: {
-          user: {
-            select: {
-              userid: true,
-              username: true,
-              firstname: true,
-              lastname: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-    },
+    include: ticketInclude,
     orderBy: {
       createdAt: "desc",
     },
   });
 
-  // Map Prisma relation names to expected interface names
-  return rawTickets.map((ticket) => ({
-    ...ticket,
-    creator: ticket.user_tickets_createdByTouser,
-    assignee: ticket.user_tickets_assignedToTouser,
-    comments: ticket.ticket_comments,
-  }));
+  return rawTickets.map((ticket) => mapTicket(ticket));
 }
 
 async function getAdminUsers() {

@@ -45,7 +45,14 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
       }`}
     >
       <div className="mb-2 flex items-start justify-between">
-        <h4 className="line-clamp-2 text-sm font-medium">{ticket.title}</h4>
+        <div className="min-w-0">
+          {ticket.ticketNumber != null && (
+            <p className="text-muted-foreground font-mono text-[11px]">
+              #{ticket.ticketNumber}
+            </p>
+          )}
+          <h4 className="line-clamp-2 text-sm font-medium">{ticket.title}</h4>
+        </div>
         <span
           className={`ml-2 rounded-full border px-2 py-0.5 text-xs font-medium ${priorityColor}`}
         >

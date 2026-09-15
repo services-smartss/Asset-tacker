@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Clock, MessageSquare, User } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, Clock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,23 +14,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import type { Ticket, TicketAdminUser } from "@/types/ticket";
+import type { Ticket, TicketAdminUser, TicketAsset } from "@/types/ticket";
 import {
+  TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_STYLES,
   TICKET_STATUS_STYLES,
   TICKET_STATUSES,
+  TICKET_TYPES,
+  TICKET_TYPE_STYLES,
+  displayTicketNumber,
   displayUserName,
-  shortTicketId,
   ticketStatusLabel,
+  ticketTypeLabel,
 } from "@/lib/ticket-ui";
+import { AssetPicker } from "./AssetPicker";
 
 interface TicketDetailPanelProps {
   ticket: Ticket;
   isAdmin: boolean;
   adminUsers: TicketAdminUser[];
   onBack?: () => void;
-  onUpdate: (ticketId: string, updates: Partial<Ticket>) => Promise<void>;
+  onUpdate: (ticketId: string, updates: Partial<Ticket> & { solution?: string }) => Promise<void>;
   onAddComment: (ticketId: string, comment: string) => Promise<void>;
 }
 
@@ -41,31 +47,50 @@ export function TicketDetailPanel({
   onUpdate,
   onAddComment,
 }: TicketDetailPanelProps) {
-  const [newComment, setNewComment] = useState("");
+  const [composer, setComposer] = useState<"answer" | "solution">("answer");
+  const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const statusStyle =
     TICKET_STATUS_STYLES[ticket.status] || TICKET_STATUS_STYLES.new;
+  const typeStyle =
+    TICKET_TYPE_STYLES[ticket.type] || TICKET_TYPE_STYLES.incident;
   const priorityStyle =
     TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium;
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
+  const handleSubmit = async () => {
+    if (!message.trim()) return;
     setIsSubmitting(true);
     try {
-      await onAddComment(ticket.id, newComment);
-      setNewComment("");
-      toast.success("Comment added");
+      if (composer === "solution") {
+        await onUpdate(ticket.id, { solution: message.trim() });
+        toast.success("Solution added");
+      } else {
+        await onAddComment(ticket.id, message.trim());
+        toast.success("Follow-up added");
+      }
+      setMessage("");
     } catch {
-      toast.error("Failed to add comment");
+      toast.error(
+        composer === "solution"
+          ? "Failed to add solution"
+          : "Failed to add follow-up",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleAssetChange = async (asset: TicketAsset | null) => {
+    try {
+      await onUpdate(ticket.id, { assetId: asset?.assetid ?? null } as Partial<Ticket>);
+    } catch {
+      toast.error("Failed to update item");
+    }
+  };
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="border-b px-4 py-3">
           <div className="flex items-start gap-3">
@@ -82,102 +107,210 @@ export function TicketDetailPanel({
               </Button>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-muted-foreground font-mono text-xs">
-                #{shortTicketId(ticket.id)}
-              </p>
-              <h2 className="text-lg leading-tight font-semibold">
-                {ticket.title}
-              </h2>
-              <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                <span className="inline-flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" />
-                  {displayUserName(ticket.creator)}
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-mono text-sm font-semibold">
+                  #{displayTicketNumber(ticket)}
+                </p>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${typeStyle}`}
+                >
+                  {ticketTypeLabel(ticket.type || "incident")}
                 </span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {new Date(ticket.createdAt).toLocaleString()}
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusStyle}`}
+                >
+                  {ticketStatusLabel(ticket.status)}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${priorityStyle}`}
+                >
+                  {ticket.priority}
                 </span>
               </div>
-            </div>
-            <div className="flex shrink-0 flex-wrap justify-end gap-2">
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${priorityStyle}`}
-              >
-                {ticket.priority}
-              </span>
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyle}`}
-              >
-                {ticketStatusLabel(ticket.status)}
-              </span>
+              <h2 className="mt-1 text-lg leading-tight font-semibold">
+                {ticket.title}
+              </h2>
             </div>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <div>
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Description
-            </p>
-            <p className="mt-1 text-sm whitespace-pre-wrap">
-              {ticket.description || "No description provided"}
-            </p>
-          </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <TimelineCard
+            title="Opening"
+            author={displayUserName(ticket.creator)}
+            date={ticket.createdAt}
+            body={ticket.description || "No description provided"}
+          />
 
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <p className="text-sm font-semibold">
-                Conversation ({ticket.comments.length})
+          {ticket.comments.map((comment) => (
+            <TimelineCard
+              key={comment.id}
+              title="Follow-up"
+              author={displayUserName(comment.user)}
+              date={comment.createdAt}
+              body={comment.comment}
+            />
+          ))}
+
+          {ticket.solution && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-green-800">
+                <CheckCircle2 className="h-4 w-4" />
+                Solution
+              </div>
+              <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs">
+                <span>{displayUserName(ticket.solver)}</span>
+                <span>
+                  {ticket.solvedAt
+                    ? new Date(ticket.solvedAt).toLocaleString()
+                    : ""}
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-green-950">
+                {ticket.solution}
               </p>
             </div>
-            {ticket.comments.length === 0 ? (
-              <p className="text-muted-foreground text-sm italic">
-                No comments yet
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {ticket.comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="bg-muted/50 rounded-lg border p-3 text-sm"
-                  >
-                    <div className="mb-1 flex items-start justify-between gap-3">
-                      <span className="font-medium">
-                        {displayUserName(comment.user)}
-                      </span>
-                      <span className="text-muted-foreground shrink-0 text-xs">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground whitespace-pre-wrap">
-                      {comment.comment}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="space-y-2 border-t px-4 py-3">
+          {isAdmin && (
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={composer === "answer" ? "default" : "outline"}
+                onClick={() => setComposer("answer")}
+              >
+                Answer
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={composer === "solution" ? "default" : "outline"}
+                onClick={() => setComposer("solution")}
+              >
+                Solution
+              </Button>
+            </div>
+          )}
           <Textarea
-            placeholder="Reply to this ticket..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            placeholder={
+              composer === "solution"
+                ? "Describe the solution..."
+                : "Add a follow-up..."
+            }
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             rows={3}
           />
           <Button
             type="button"
-            onClick={handleAddComment}
-            disabled={!newComment.trim() || isSubmitting}
+            onClick={handleSubmit}
+            disabled={!message.trim() || isSubmitting}
           >
-            {isSubmitting ? "Sending..." : "Send reply"}
+            {isSubmitting
+              ? "Saving..."
+              : composer === "solution"
+                ? "Add solution"
+                : "Add follow-up"}
           </Button>
         </div>
       </div>
 
-      <aside className="w-full shrink-0 space-y-4 border-t px-4 py-4 md:w-64 md:border-t-0 md:border-l">
+      <aside className="w-full shrink-0 space-y-4 border-t px-4 py-4 lg:w-72 lg:border-t-0 lg:border-l">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          Actors & fields
+        </p>
+
+        <Field label="Requester">
+          <p className="mt-1 flex items-center gap-1 text-sm">
+            <User className="h-3.5 w-3.5" />
+            {displayUserName(ticket.creator)}
+          </p>
+        </Field>
+
+        <div>
+          <Label htmlFor="ticket-assignee">Assigned to</Label>
+          {isAdmin ? (
+            <Select
+              value={ticket.assignedTo || "unassigned"}
+              onValueChange={(userId) =>
+                onUpdate(ticket.id, {
+                  assignedTo: userId === "unassigned" ? null : userId,
+                })
+              }
+            >
+              <SelectTrigger id="ticket-assignee" className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {adminUsers.map((admin) => (
+                  <SelectItem key={admin.userid} value={admin.userid}>
+                    {displayUserName(admin)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="mt-1 text-sm">{displayUserName(ticket.assignee)}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="ticket-type">Type</Label>
+          {isAdmin ? (
+            <Select
+              value={ticket.type || "incident"}
+              onValueChange={(type) => onUpdate(ticket.id, { type })}
+            >
+              <SelectTrigger id="ticket-type" className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TICKET_TYPES.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="mt-1 text-sm">
+              {ticketTypeLabel(ticket.type || "incident")}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="ticket-category">Category</Label>
+          {isAdmin ? (
+            <Select
+              value={ticket.category || "none"}
+              onValueChange={(value) =>
+                onUpdate(ticket.id, {
+                  category: value === "none" ? null : value,
+                })
+              }
+            >
+              <SelectTrigger id="ticket-category" className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {TICKET_CATEGORIES.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="mt-1 text-sm">{ticket.category || "None"}</p>
+          )}
+        </div>
+
         <div>
           <Label htmlFor="ticket-status">Status</Label>
           {isAdmin ? (
@@ -225,33 +358,77 @@ export function TicketDetailPanel({
         </div>
 
         <div>
-          <Label htmlFor="ticket-assignee">Assignee</Label>
+          <Label>Item</Label>
           {isAdmin ? (
-            <Select
-              value={ticket.assignedTo || "unassigned"}
-              onValueChange={(userId) =>
-                onUpdate(ticket.id, {
-                  assignedTo: userId === "unassigned" ? null : userId,
-                })
-              }
+            <div className="mt-1">
+              <AssetPicker
+                value={ticket.asset}
+                onChange={handleAssetChange}
+              />
+            </div>
+          ) : ticket.asset ? (
+            <Link
+              href={`/assets/${ticket.asset.assetid}`}
+              className="text-primary mt-1 block text-sm hover:underline"
             >
-              <SelectTrigger id="ticket-assignee" className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {adminUsers.map((admin) => (
-                  <SelectItem key={admin.userid} value={admin.userid}>
-                    {displayUserName(admin)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {ticket.asset.assettag} — {ticket.asset.assetname}
+            </Link>
           ) : (
-            <p className="mt-1 text-sm">{displayUserName(ticket.assignee)}</p>
+            <p className="text-muted-foreground mt-1 text-sm">None</p>
           )}
         </div>
+
+        {ticket.asset && isAdmin && (
+          <Link
+            href={`/assets/${ticket.asset.assetid}`}
+            className="text-primary text-xs hover:underline"
+          >
+            Open asset
+          </Link>
+        )}
       </aside>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-medium">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function TimelineCard({
+  title,
+  author,
+  date,
+  body,
+}: {
+  title: string;
+  author: string;
+  date: Date | string;
+  body: string;
+}) {
+  return (
+    <div className="bg-muted/40 rounded-lg border p-3 text-sm">
+      <div className="mb-1 flex items-start justify-between gap-3">
+        <span className="font-medium">
+          {title} · {author}
+        </span>
+        <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
+          <Clock className="h-3 w-3" />
+          {new Date(date).toLocaleString()}
+        </span>
+      </div>
+      <p className="text-muted-foreground whitespace-pre-wrap">{body}</p>
     </div>
   );
 }

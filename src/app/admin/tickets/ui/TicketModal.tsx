@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Ticket } from "@/types/ticket";
+import { TICKET_PRIORITIES, TICKET_STATUSES } from "@/lib/ticket-ui";
 
 interface AdminUser {
   userid: string;
@@ -35,19 +36,7 @@ interface TicketModalProps {
   onAddComment: (ticketId: string, comment: string) => Promise<any>;
 }
 
-const STATUSES = [
-  { value: "new", label: "New" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-];
-
-const PRIORITIES = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
-];
+}
 
 export function TicketModal({
   ticket,
@@ -131,7 +120,7 @@ export function TicketModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((status) => (
+                  {TICKET_STATUSES.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>
@@ -150,7 +139,7 @@ export function TicketModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIORITIES.map((priority) => (
+                  {TICKET_PRIORITIES.map((priority) => (
                     <SelectItem key={priority.value} value={priority.value}>
                       {priority.label}
                     </SelectItem>

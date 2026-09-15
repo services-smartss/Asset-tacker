@@ -11,6 +11,8 @@ import {
   buildPrismaArgs,
   buildPaginatedResponse,
 } from "@/lib/pagination";
+import { mapTicket, ticketInclude } from "@/lib/ticket-query";
+import { uuidSchema } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 
 const TICKET_SORT_FIELDS = [
@@ -49,41 +51,7 @@ async function getLocalTickets(url: URL) {
         : {}
       : { createdBy: user.id };
 
-    const include = {
-      user_tickets_createdByTouser: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      },
-      user_tickets_assignedToTouser: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      },
-      ticket_comments: {
-        include: {
-          user: {
-            select: {
-              userid: true,
-              username: true,
-              firstname: true,
-              lastname: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "asc" as const,
-        },
-      },
-    };
+    const include = ticketInclude;
 
     // If no `page` param, return all results for backward compatibility
     if (!searchParams.has("page")) {
@@ -93,12 +61,7 @@ async function getLocalTickets(url: URL) {
         orderBy: { createdAt: "desc" },
       });
 
-      const tickets = rawTickets.map((ticket) => ({
-        ...ticket,
-        creator: ticket.user_tickets_createdByTouser,
-        assignee: ticket.user_tickets_assignedToTouser,
-        comments: ticket.ticket_comments,
-      }));
+      const tickets = rawTickets.map((ticket) => mapTicket(ticket));
 
       return NextResponse.json(tickets, { status: 200 });
     }
@@ -120,13 +83,7 @@ async function getLocalTickets(url: URL) {
       prisma.tickets.count({ where }),
     ]);
 
-    // Map Prisma relation names to expected interface names
-    const tickets = rawTickets.map((ticket) => ({
-      ...ticket,
-      creator: ticket.user_tickets_createdByTouser,
-      assignee: ticket.user_tickets_assignedToTouser,
-      comments: ticket.ticket_comments,
-    }));
+    const tickets = rawTickets.map((ticket) => mapTicket(ticket));
 
     return NextResponse.json(buildPaginatedResponse(tickets, total, params), {
       status: 200,
@@ -215,10 +172,26 @@ export async function POST(req: Request) {
     const user = await requireApiAuth();
     const body = await req.json();
 
-    const { title, description, priority } = body || {};
+    const { title, description, priority, type, category, assetId } = body || {};
 
     if (!title) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
+    }
+
+    const ticketType = type === "request" ? "request" : "incident";
+    const linkedAssetId =
+      typeof assetId === "string" && uuidSchema.safeParse(assetId).success
+        ? assetId
+        : null;
+
+    if (linkedAssetId) {
+      const asset = await prisma.asset.findUnique({
+        where: { assetid: linkedAssetId },
+        select: { assetid: true },
+      });
+      if (!asset) {
+        return NextResponse.json({ error: "Asset not found" }, { status: 400 });
+      }
     }
 
     const rawTicket = await prisma.tickets.create({
@@ -226,34 +199,19 @@ export async function POST(req: Request) {
         title,
         description: description || null,
         priority: priority || "medium",
+        type: ticketType,
+        category: category || null,
+        assetId: linkedAssetId,
         user_tickets_createdByTouser: {
           connect: { userid: user.id! },
         },
         status: "new",
         updatedAt: new Date(),
       },
-      include: {
-        user_tickets_createdByTouser: {
-          select: {
-            userid: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
-      },
+      include: ticketInclude,
     });
 
-    // Map Prisma relation names to expected interface names
-    const ticket = {
-      ...rawTicket,
-      creator: rawTicket.user_tickets_createdByTouser,
-      assignee: null,
-      comments: [],
-    };
-
-    return NextResponse.json(ticket, { status: 201 });
+    return NextResponse.json(mapTicket(rawTicket), { status: 201 });
   } catch (error) {
     logger.error("POST /api/tickets error", { error });
     if (error instanceof Error && error.message === "Unauthorized") {

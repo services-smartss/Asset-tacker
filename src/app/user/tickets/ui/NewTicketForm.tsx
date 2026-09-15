@@ -13,23 +13,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { AssetPicker } from "@/app/tickets/ui/AssetPicker";
+import {
+  TICKET_CATEGORIES,
+  TICKET_PRIORITIES,
+  TICKET_TYPES,
+} from "@/lib/ticket-ui";
+import type { Ticket, TicketAsset } from "@/types/ticket";
 
 interface NewTicketFormProps {
-  onTicketCreated: (ticket: any) => void;
+  onTicketCreated: (ticket: Ticket) => void;
   onCancel: () => void;
 }
-
-const PRIORITIES = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
-];
 
 export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
+  const [type, setType] = useState("incident");
+  const [category, setCategory] = useState("");
+  const [asset, setAsset] = useState<TicketAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +55,9 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
           title,
           description: description.trim() || null,
           priority,
+          type,
+          category: category || null,
+          assetId: asset?.assetid ?? null,
         }),
       });
 
@@ -63,7 +69,7 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
       toast.success("Ticket created successfully");
       onTicketCreated(newTicket);
     } catch (error) {
-      console.error("Error creating ticket:", error);
+      console.error("Error creating ticket", error);
       toast.error("Failed to create ticket");
     } finally {
       setIsSubmitting(false);
@@ -71,16 +77,60 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
   };
 
   return (
-    <div className="rounded-lg border bg-card p-6">
-      <h2 className="text-xl font-semibold mb-4">Create New Ticket</h2>
+    <div className="bg-card rounded-lg border p-6">
+      <h2 className="mb-4 text-xl font-semibold">Create New Ticket</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="type">Type</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TICKET_TYPES.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={category || "none"}
+              onValueChange={(value) =>
+                setCategory(value === "none" ? "" : value)
+              }
+            >
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {TICKET_CATEGORIES.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <Label>Item</Label>
+          <AssetPicker value={asset} onChange={setAsset} />
+        </div>
+
         <div>
           <Label htmlFor="title">Title *</Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Brief description of your request"
+            placeholder="Brief description of the incident or request"
             required
           />
         </div>
@@ -91,7 +141,7 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Provide more details about your request..."
+            placeholder="Describe the problem or request..."
             rows={4}
           />
         </div>
@@ -103,9 +153,9 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PRIORITIES.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
+              {TICKET_PRIORITIES.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
                 </SelectItem>
               ))}
             </SelectContent>

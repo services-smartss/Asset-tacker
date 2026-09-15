@@ -16,72 +16,10 @@ import {
   notifyTicketStatusChanged,
 } from "@/lib/notifications";
 import { uuidSchema } from "@/lib/validation";
+import { mapTicket, ticketInclude } from "@/lib/ticket-query";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
-}
-
-const ticketInclude = {
-  user_tickets_createdByTouser: {
-    select: {
-      userid: true,
-      username: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    },
-  },
-  user_tickets_assignedToTouser: {
-    select: {
-      userid: true,
-      username: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    },
-  },
-  ticket_comments: {
-    include: {
-      user: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "asc" as const,
-    },
-  },
-};
-
-function mapTicket<
-  T extends {
-    user_tickets_createdByTouser: {
-      userid: string;
-      username: string | null;
-      firstname: string;
-      lastname: string;
-      email: string | null;
-    };
-    user_tickets_assignedToTouser: {
-      userid: string;
-      username: string | null;
-      firstname: string;
-      lastname: string;
-      email: string | null;
-    } | null;
-    ticket_comments: unknown[];
-  },
->(rawTicket: T) {
-  return {
-    ...rawTicket,
-    creator: rawTicket.user_tickets_createdByTouser,
-    assignee: rawTicket.user_tickets_assignedToTouser,
-    comments: rawTicket.ticket_comments,
-  };
 }
 
 /**
@@ -197,20 +135,20 @@ async function getFreshdeskTicket(id: string) {
 }
 
 // PATCH /api/tickets/[id]
-// Update a local ticket (status, priority, assignedTo)
+// Update a local ticket (status, priority, assignedTo, ITSM fields)
 // Only admins can update tickets
 export async function PATCH(req: Request, { params }: RouteParams) {
   try {
     const demoBlock = requireNotDemoMode();
     if (demoBlock) return demoBlock;
 
-    const _user = await requireApiAdmin();
+    const user = await requireApiAdmin();
     const { id } = await params;
     const body = await req.json();
 
-    const { status, priority, assignedTo } = body || {};
+    const { status, priority, assignedTo, type, category, assetId, solution } =
+      body || {};
 
-    // Fetch the existing ticket and verify it belongs to admin's org
     const orgContext = await getOrganizationContext();
     const orgId = orgContext?.organization?.id;
 
@@ -228,13 +166,42 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
+    if (type === "incident" || type === "request") updateData.type = type;
+    if (category !== undefined) updateData.category = category || null;
+
+    if (assetId !== undefined) {
+      if (assetId === null || assetId === "") {
+        updateData.assetId = null;
+      } else if (uuidSchema.safeParse(assetId).success) {
+        const asset = await prisma.asset.findUnique({
+          where: { assetid: assetId },
+          select: { assetid: true },
+        });
+        if (!asset) {
+          return NextResponse.json(
+            { error: "Asset not found" },
+            { status: 400 },
+          );
+        }
+        updateData.assetId = assetId;
+      }
+    }
+
+    if (typeof solution === "string" && solution.trim()) {
+      updateData.solution = solution.trim();
+      updateData.solvedAt = new Date();
+      updateData.solvedBy = user.id;
+      if (existingTicket.status !== "closed" && !status) {
+        updateData.status = "solved";
+      }
+    }
 
     const rawTicket = await prisma.tickets.update({
       where: { id },
@@ -243,6 +210,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     });
 
     const ticket = mapTicket(rawTicket);
+    const nextStatus = (updateData.status as string | undefined) ?? status;
 
     if (
       assignedTo &&
@@ -263,7 +231,11 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       );
     }
 
-    if (status && status !== existingTicket.status && ticket.creator?.email) {
+    if (
+      nextStatus &&
+      nextStatus !== existingTicket.status &&
+      ticket.creator?.email
+    ) {
       const creatorName = `${ticket.creator.firstname} ${ticket.creator.lastname}`;
       notifyTicketStatusChanged(
         existingTicket.title,
@@ -272,7 +244,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         ticket.creator.userid,
         creatorName,
         existingTicket.status,
-        status,
+        nextStatus,
       ).catch((e) =>
         logger.error("Failed to send ticket status change notification", {
           error: e,

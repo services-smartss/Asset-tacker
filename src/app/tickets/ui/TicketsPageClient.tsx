@@ -24,8 +24,10 @@ import {
   TICKET_STATUSES,
   displayUserName,
   filterInboxTickets,
-  shortTicketId,
+  displayTicketNumber,
   ticketStatusLabel,
+  ticketTypeLabel,
+  TICKET_TYPE_STYLES,
   type TicketQueue,
 } from "@/lib/ticket-ui";
 import { cn } from "@/lib/utils";
@@ -84,7 +86,14 @@ export default function TicketsPageClient({
 
   const handleTicketCreated = (newTicket: TicketRecord) => {
     setTickets((prev) => [
-      { ...newTicket, comments: newTicket.comments ?? [] },
+      {
+        ...newTicket,
+        comments: newTicket.comments ?? [],
+        type: newTicket.type ?? "incident",
+        category: newTicket.category ?? null,
+        asset: newTicket.asset ?? null,
+        solution: newTicket.solution ?? null,
+      },
       ...prev,
     ]);
     setSelectedId(newTicket.id);
@@ -93,7 +102,7 @@ export default function TicketsPageClient({
 
   const handleUpdate = async (
     ticketId: string,
-    updates: Partial<TicketRecord>,
+    updates: Partial<TicketRecord> & { solution?: string },
   ) => {
     const response = await fetch(`/api/tickets/${ticketId}`, {
       method: "PATCH",
@@ -114,7 +123,9 @@ export default function TicketsPageClient({
           : ticket,
       ),
     );
-    toast.success("Ticket updated");
+    if (!updates.solution) {
+      toast.success("Ticket updated");
+    }
   };
 
   const handleAddComment = async (ticketId: string, comment: string) => {
@@ -130,11 +141,27 @@ export default function TicketsPageClient({
 
     const newComment = await response.json();
     setTickets((prev) =>
-      prev.map((ticket) =>
-        ticket.id === ticketId
-          ? { ...ticket, comments: [...ticket.comments, newComment] }
-          : ticket,
-      ),
+      prev.map((ticket) => {
+        if (ticket.id !== ticketId) return ticket;
+        const next: TicketRecord = {
+          ...ticket,
+          comments: [...ticket.comments, newComment],
+        };
+        if (isAdmin && !ticket.assignedTo && ticket.status === "new") {
+          next.assignedTo = currentUserId;
+          next.status = "processing";
+          const me = adminUsers.find((admin) => admin.userid === currentUserId);
+          if (me) {
+            next.assignee = {
+              userid: me.userid,
+              username: me.username,
+              firstname: me.firstname,
+              lastname: me.lastname,
+            };
+          }
+        }
+        return next;
+      }),
     );
   };
 
@@ -288,7 +315,7 @@ export default function TicketsPageClient({
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-muted-foreground font-mono text-[11px]">
-                              #{shortTicketId(ticket.id)}
+                              #{displayTicketNumber(ticket)}
                             </p>
                             <p className="truncate text-sm font-medium">
                               {ticket.title}
@@ -299,6 +326,18 @@ export default function TicketsPageClient({
                                 ? ` · ${displayUserName(ticket.assignee)}`
                                 : " · Unassigned"}
                             </p>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              <span
+                                className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${TICKET_TYPE_STYLES[ticket.type] || TICKET_TYPE_STYLES.incident}`}
+                              >
+                                {ticketTypeLabel(ticket.type || "incident")}
+                              </span>
+                              {ticket.category && (
+                                <span className="rounded-full border px-1.5 py-0.5 text-[10px]">
+                                  {ticket.category}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <span

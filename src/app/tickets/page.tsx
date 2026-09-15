@@ -5,46 +5,11 @@ import Breadcrumb from "@/components/Breadcrumb";
 import TicketsPageClient from "./ui/TicketsPageClient";
 import prisma from "@/lib/prisma";
 import { getOrganizationContext } from "@/lib/organization-context";
+import { mapTicket, ticketInclude } from "@/lib/ticket-query";
 
 export const metadata = {
   title: "Tickets - Asset Tracker",
   description: "Open and manage support tickets",
-};
-
-const ticketInclude = {
-  user_tickets_createdByTouser: {
-    select: {
-      userid: true,
-      username: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    },
-  },
-  user_tickets_assignedToTouser: {
-    select: {
-      userid: true,
-      username: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    },
-  },
-  ticket_comments: {
-    include: {
-      user: {
-        select: {
-          userid: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "asc" as const,
-    },
-  },
 };
 
 async function getInboxTickets(userId: string, isAdmin: boolean) {
@@ -62,12 +27,7 @@ async function getInboxTickets(userId: string, isAdmin: boolean) {
     orderBy: { createdAt: "desc" },
   });
 
-  return rawTickets.map((ticket) => ({
-    ...ticket,
-    creator: ticket.user_tickets_createdByTouser,
-    assignee: ticket.user_tickets_assignedToTouser,
-    comments: ticket.ticket_comments,
-  }));
+  return rawTickets.map((ticket) => mapTicket(ticket));
 }
 
 async function getAdminUsers() {
