@@ -36,8 +36,6 @@ interface TicketModalProps {
   onAddComment: (ticketId: string, comment: string) => Promise<any>;
 }
 
-}
-
 export function TicketModal({
   ticket,
   adminUsers,
