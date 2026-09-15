@@ -18,16 +18,16 @@ import { NewTicketForm } from "@/app/user/tickets/ui/NewTicketForm";
 import { TicketDetailPanel } from "./TicketDetailPanel";
 import type { Ticket as TicketRecord, TicketAdminUser } from "@/types/ticket";
 import {
+  TICKET_CHIP_CLASS,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_STYLES,
-  TICKET_STATUS_STYLES,
   TICKET_STATUSES,
+  displayTicketAsset,
+  displayTicketNumber,
   displayUserName,
   filterInboxTickets,
-  displayTicketNumber,
   ticketStatusLabel,
-  ticketTypeLabel,
-  TICKET_TYPE_STYLES,
+  ticketStatusStyle,
   type TicketQueue,
 } from "@/lib/ticket-ui";
 import { cn } from "@/lib/utils";
@@ -169,10 +169,7 @@ export default function TicketsPageClient({
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Ticket className="h-6 w-6" />
-            Tickets
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Open, assign, and reply to support requests in one inbox
           </p>
@@ -297,62 +294,84 @@ export default function TicketsPageClient({
                 {filteredTickets.length} ticket
                 {filteredTickets.length === 1 ? "" : "s"}
               </p>
-              <ul>
+              <ul role="listbox" aria-label="Tickets">
                 {filteredTickets.map((ticket) => {
                   const isSelected = ticket.id === selectedId;
                   return (
                     <li key={ticket.id}>
                       <button
                         type="button"
+                        role="option"
                         onClick={() => setSelectedId(ticket.id)}
+                        aria-selected={isSelected}
                         className={cn(
                           "w-full border-b px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "bg-muted"
+                            ? "bg-primary text-primary-foreground"
                             : "hover:bg-muted/50",
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-muted-foreground font-mono text-[11px]">
+                            <p
+                              className={cn(
+                                "font-mono text-[11px]",
+                                isSelected
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground",
+                              )}
+                            >
                               #{displayTicketNumber(ticket)}
                             </p>
                             <p className="truncate text-sm font-medium">
                               {ticket.title}
                             </p>
-                            <p className="text-muted-foreground mt-1 truncate text-xs">
+                            <p
+                              className={cn(
+                                "mt-1 truncate text-xs",
+                                isSelected
+                                  ? "text-primary-foreground/80"
+                                  : "text-foreground",
+                              )}
+                            >
+                              {displayTicketAsset(ticket.asset)}
+                            </p>
+                            <p
+                              className={cn(
+                                "mt-1 truncate text-[11px]",
+                                isSelected
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground",
+                              )}
+                            >
                               {displayUserName(ticket.creator)}
                               {ticket.assignee
                                 ? ` · ${displayUserName(ticket.assignee)}`
                                 : " · Unassigned"}
+                              {ticket.category ? ` · ${ticket.category}` : ""}
                             </p>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              <span
-                                className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${TICKET_TYPE_STYLES[ticket.type] || TICKET_TYPE_STYLES.incident}`}
-                              >
-                                {ticketTypeLabel(ticket.type || "incident")}
-                              </span>
-                              {ticket.category && (
-                                <span className="rounded-full border px-1.5 py-0.5 text-[10px]">
-                                  {ticket.category}
-                                </span>
-                              )}
-                            </div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${TICKET_STATUS_STYLES[ticket.status] || TICKET_STATUS_STYLES.new}`}
+                              className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}
                             >
                               {ticketStatusLabel(ticket.status)}
                             </span>
                             <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
+                              className={`${TICKET_CHIP_CLASS} capitalize ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
                             >
                               {ticket.priority}
                             </span>
                           </div>
                         </div>
-                        <p className="text-muted-foreground mt-2 text-[11px]">
+                        <p
+                          className={cn(
+                            "mt-2 text-[11px]",
+                            isSelected
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground",
+                          )}
+                        >
                           Updated {new Date(ticket.updatedAt).toLocaleString()}
                         </p>
                       </button>

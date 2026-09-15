@@ -27,27 +27,45 @@ export const TICKET_PRIORITIES = [
   { value: "urgent", label: "Urgent" },
 ] as const;
 
+export const TICKET_CHIP_CLASS =
+  "rounded-md border px-2 py-0.5 text-[10px] font-medium";
+
+const STATUS_INFO = "bg-info-bg text-info-foreground border-transparent";
+const STATUS_WARNING =
+  "bg-warning-bg text-warning-foreground border-transparent";
+const STATUS_SUCCESS =
+  "bg-success-bg text-success-foreground border-transparent";
+const STATUS_MUTED = "bg-muted text-muted-foreground border-border";
+
 export const TICKET_STATUS_STYLES: Record<string, string> = {
-  new: "bg-blue-100 text-blue-800 border-blue-300",
-  processing: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  pending: "bg-purple-100 text-purple-800 border-purple-300",
-  solved: "bg-green-100 text-green-800 border-green-300",
-  closed: "bg-gray-100 text-gray-800 border-gray-300",
-  in_progress: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  completed: "bg-green-100 text-green-800 border-green-300",
-  cancelled: "bg-gray-100 text-gray-800 border-gray-300",
+  new: STATUS_INFO,
+  processing: STATUS_WARNING,
+  pending: STATUS_MUTED,
+  solved: STATUS_SUCCESS,
+  closed: STATUS_MUTED,
+  in_progress: STATUS_WARNING,
+  completed: STATUS_SUCCESS,
+  cancelled: STATUS_MUTED,
+};
+
+export const TICKET_STATUS_DOT_STYLES: Record<string, string> = {
+  new: "bg-[hsl(var(--info))]",
+  processing: "bg-[hsl(var(--warning))]",
+  pending: "bg-muted-foreground",
+  solved: "bg-[hsl(var(--success))]",
+  closed: "bg-muted-foreground",
 };
 
 export const TICKET_TYPE_STYLES: Record<string, string> = {
-  incident: "bg-red-100 text-red-800 border-red-300",
-  request: "bg-sky-100 text-sky-800 border-sky-300",
+  incident: "bg-destructive/10 text-destructive border-destructive/30",
+  request: "bg-background text-foreground border-border",
 };
 
 export const TICKET_PRIORITY_STYLES: Record<string, string> = {
-  low: "bg-gray-100 text-gray-800 border-gray-300",
-  medium: "bg-blue-100 text-blue-800 border-blue-300",
-  high: "bg-orange-100 text-orange-800 border-orange-300",
-  urgent: "bg-red-100 text-red-800 border-red-300",
+  low: STATUS_MUTED,
+  medium: STATUS_INFO,
+  high: STATUS_WARNING,
+  urgent: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
 export function normalizeTicketStatus(status: string) {
@@ -88,6 +106,23 @@ export function displayUserName(
   return `${user.firstname} ${user.lastname}`.trim();
 }
 
+export function displayTicketAsset(
+  asset: { assettag: string; assetname: string } | null | undefined,
+) {
+  if (!asset) return "No item";
+  return `${asset.assettag} — ${asset.assetname}`;
+}
+
+export function ticketStatusStyle(status: string) {
+  const normalized = normalizeTicketStatus(status);
+  return TICKET_STATUS_STYLES[normalized] ?? TICKET_STATUS_STYLES.new;
+}
+
+export function ticketStatusDotStyle(status: string) {
+  const normalized = normalizeTicketStatus(status);
+  return TICKET_STATUS_DOT_STYLES[normalized] ?? TICKET_STATUS_DOT_STYLES.new;
+}
+
 export type TicketQueue = "all" | "unassigned" | "mine" | "open";
 
 const OPEN_STATUSES = new Set(["new", "processing", "pending", "in_progress"]);
@@ -104,6 +139,7 @@ export function filterInboxTickets<
     priority: string;
     assignedTo: string | null;
     creator: { firstname: string; lastname: string };
+    asset?: { assettag: string; assetname: string } | null;
   },
 >(
   tickets: T[],
@@ -148,6 +184,8 @@ export function filterInboxTickets<
         displayTicketNumber(ticket),
         ticket.type ?? "",
         ticket.category ?? "",
+        ticket.asset?.assettag ?? "",
+        ticket.asset?.assetname ?? "",
       ]
         .join(" ")
         .toLowerCase();

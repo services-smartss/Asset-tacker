@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  displayTicketAsset,
   displayTicketNumber,
   displayUserName,
   filterInboxTickets,
@@ -21,6 +22,7 @@ const tickets = [
     priority: "high",
     assignedTo: null,
     creator: { firstname: "Ada", lastname: "Lovelace" },
+    asset: { assettag: "LT-104", assetname: "ThinkPad T14" },
   },
   {
     id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
@@ -74,6 +76,11 @@ describe("ticket-ui", () => {
     expect(ticketStatusLabel("unknown")).toBe("unknown");
     expect(ticketTypeLabel("incident")).toBe("Incident");
     expect(ticketTypeLabel("request")).toBe("Request");
+  });
+
+  it("formats a linked asset for the inbox row", () => {
+    expect(displayTicketAsset(tickets[0].asset)).toBe("LT-104 — ThinkPad T14");
+    expect(displayTicketAsset(null)).toBe("No item");
   });
 
   it("formats a user name", () => {
@@ -133,5 +140,14 @@ describe("ticket-ui", () => {
     expect(
       filterInboxTickets(tickets, { ...baseOptions, searchQuery: "incident" }),
     ).toHaveLength(2);
+    expect(
+      filterInboxTickets(tickets, { ...baseOptions, searchQuery: "LT-104" }),
+    ).toHaveLength(1);
+    expect(
+      filterInboxTickets(tickets, {
+        ...baseOptions,
+        searchQuery: "thinkpad",
+      }),
+    ).toHaveLength(1);
   });
 });

@@ -24,10 +24,10 @@ export function TicketColumn({ id, label, color, tickets, onTicketClick }: Ticke
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={`h-3 w-3 rounded-full ${color}`} />
+          <div className={`h-3 w-3 rounded-md ${color}`} />
           <h3 className="font-semibold">{label}</h3>
         </div>
-        <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+        <span className="bg-muted rounded-md px-2.5 py-0.5 text-xs font-medium">
           {tickets.length}
         </span>
       </div>

@@ -17,17 +17,19 @@ import { toast } from "sonner";
 import type { Ticket, TicketAdminUser, TicketAsset } from "@/types/ticket";
 import {
   TICKET_CATEGORIES,
+  TICKET_CHIP_CLASS,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_STYLES,
-  TICKET_STATUS_STYLES,
   TICKET_STATUSES,
   TICKET_TYPES,
   TICKET_TYPE_STYLES,
   displayTicketNumber,
   displayUserName,
   ticketStatusLabel,
+  ticketStatusStyle,
   ticketTypeLabel,
 } from "@/lib/ticket-ui";
+import { cn } from "@/lib/utils";
 import { AssetPicker } from "./AssetPicker";
 
 interface TicketDetailPanelProps {
@@ -35,6 +37,7 @@ interface TicketDetailPanelProps {
   isAdmin: boolean;
   adminUsers: TicketAdminUser[];
   onBack?: () => void;
+  className?: string;
   onUpdate: (ticketId: string, updates: Partial<Ticket> & { solution?: string }) => Promise<void>;
   onAddComment: (ticketId: string, comment: string) => Promise<void>;
 }
@@ -44,6 +47,7 @@ export function TicketDetailPanel({
   isAdmin,
   adminUsers,
   onBack,
+  className,
   onUpdate,
   onAddComment,
 }: TicketDetailPanelProps) {
@@ -51,8 +55,7 @@ export function TicketDetailPanel({
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const statusStyle =
-    TICKET_STATUS_STYLES[ticket.status] || TICKET_STATUS_STYLES.new;
+  const statusStyle = ticketStatusStyle(ticket.status);
   const typeStyle =
     TICKET_TYPE_STYLES[ticket.type] || TICKET_TYPE_STYLES.incident;
   const priorityStyle =
@@ -90,7 +93,7 @@ export function TicketDetailPanel({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <div className={cn("flex min-h-0 flex-1 flex-col lg:flex-row", className)}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="border-b px-4 py-3">
           <div className="flex items-start gap-3">
@@ -111,18 +114,14 @@ export function TicketDetailPanel({
                 <p className="font-mono text-sm font-semibold">
                   #{displayTicketNumber(ticket)}
                 </p>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${typeStyle}`}
-                >
+                <span className={`${TICKET_CHIP_CLASS} text-[11px] ${typeStyle}`}>
                   {ticketTypeLabel(ticket.type || "incident")}
                 </span>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusStyle}`}
-                >
+                <span className={`${TICKET_CHIP_CLASS} text-[11px] ${statusStyle}`}>
                   {ticketStatusLabel(ticket.status)}
                 </span>
                 <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${priorityStyle}`}
+                  className={`${TICKET_CHIP_CLASS} text-[11px] capitalize ${priorityStyle}`}
                 >
                   {ticket.priority}
                 </span>
@@ -153,8 +152,8 @@ export function TicketDetailPanel({
           ))}
 
           {ticket.solution && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm">
-              <div className="mb-1 flex items-center gap-2 font-semibold text-green-800">
+            <div className="border-success-foreground/20 bg-success-bg rounded-lg border p-3 text-sm">
+              <div className="text-success-foreground mb-1 flex items-center gap-2 font-semibold">
                 <CheckCircle2 className="h-4 w-4" />
                 Solution
               </div>
@@ -166,7 +165,7 @@ export function TicketDetailPanel({
                     : ""}
                 </span>
               </div>
-              <p className="whitespace-pre-wrap text-green-950">
+              <p className="text-success-foreground whitespace-pre-wrap">
                 {ticket.solution}
               </p>
             </div>

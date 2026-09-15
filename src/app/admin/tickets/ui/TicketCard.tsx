@@ -3,18 +3,16 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Clock, User } from "lucide-react";
 import { Ticket } from "@/types/ticket";
+import {
+  TICKET_CHIP_CLASS,
+  TICKET_PRIORITY_STYLES,
+  displayTicketAsset,
+} from "@/lib/ticket-ui";
 
 interface TicketCardProps {
   ticket: Ticket;
   onClick: () => void;
 }
-
-const PRIORITY_COLORS = {
-  low: "bg-gray-100 text-gray-800 border-gray-300",
-  medium: "bg-blue-100 text-blue-800 border-blue-300",
-  high: "bg-orange-100 text-orange-800 border-orange-300",
-  urgent: "bg-red-100 text-red-800 border-red-300",
-};
 
 export function TicketCard({ ticket, onClick }: TicketCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -29,8 +27,7 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
     : undefined;
 
   const priorityColor =
-    PRIORITY_COLORS[ticket.priority as keyof typeof PRIORITY_COLORS] ||
-    PRIORITY_COLORS.medium;
+    TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium;
 
   return (
     <button
@@ -53,12 +50,12 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
           )}
           <h4 className="line-clamp-2 text-sm font-medium">{ticket.title}</h4>
         </div>
-        <span
-          className={`ml-2 rounded-full border px-2 py-0.5 text-xs font-medium ${priorityColor}`}
-        >
+        <span className={`ml-2 ${TICKET_CHIP_CLASS} capitalize ${priorityColor}`}>
           {ticket.priority}
         </span>
       </div>
+
+      <p className="mb-3 truncate text-xs">{displayTicketAsset(ticket.asset)}</p>
 
       {ticket.description && (
         <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">
