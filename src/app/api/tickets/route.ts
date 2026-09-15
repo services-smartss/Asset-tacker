@@ -201,10 +201,12 @@ export async function POST(req: Request) {
         priority: priority || "medium",
         type: ticketType,
         category: category || null,
-        assetId: linkedAssetId,
         user_tickets_createdByTouser: {
           connect: { userid: user.id! },
         },
+        ...(linkedAssetId
+          ? { asset: { connect: { assetid: linkedAssetId } } }
+          : {}),
         status: "new",
         updatedAt: new Date(),
       },
