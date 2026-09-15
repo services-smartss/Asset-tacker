@@ -17,6 +17,7 @@ import {
 } from "@/lib/notifications";
 import { uuidSchema } from "@/lib/validation";
 import { mapTicket, ticketInclude } from "@/lib/ticket-query";
+import { Prisma } from "@prisma/client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -166,19 +167,23 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    const updateData: Record<string, unknown> = {
+    const updateData: Prisma.ticketsUpdateInput = {
       updatedAt: new Date(),
     };
 
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
-    if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
+    if (assignedTo !== undefined) {
+      updateData.user_tickets_assignedToTouser = assignedTo
+        ? { connect: { userid: assignedTo } }
+        : { disconnect: true };
+    }
     if (type === "incident" || type === "request") updateData.type = type;
     if (category !== undefined) updateData.category = category || null;
 
     if (assetId !== undefined) {
       if (assetId === null || assetId === "") {
-        updateData.assetId = null;
+        updateData.asset = { disconnect: true };
       } else if (uuidSchema.safeParse(assetId).success) {
         const asset = await prisma.asset.findUnique({
           where: { assetid: assetId },
@@ -190,14 +195,18 @@ export async function PATCH(req: Request, { params }: RouteParams) {
             { status: 400 },
           );
         }
-        updateData.assetId = assetId;
+        updateData.asset = { connect: { assetid: assetId } };
       }
     }
 
     if (typeof solution === "string" && solution.trim()) {
       updateData.solution = solution.trim();
       updateData.solvedAt = new Date();
-      updateData.solvedBy = user.id;
+      if (user.id) {
+        updateData.user_tickets_solvedByTouser = {
+          connect: { userid: user.id },
+        };
+      }
       if (existingTicket.status !== "closed" && !status) {
         updateData.status = "solved";
       }
