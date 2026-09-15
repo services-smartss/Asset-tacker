@@ -50,8 +50,23 @@ export default async function TicketsPage() {
     redirect("/dashboard");
   }
 
-  const tickets = await getTickets();
-  const adminUsers = await getAdminUsers();
+  const [tickets, adminUsers, orgUsers, departments] = await Promise.all([
+    getTickets(),
+    getAdminUsers(),
+    prisma.user.findMany({
+      select: {
+        userid: true,
+        username: true,
+        firstname: true,
+        lastname: true,
+      },
+      orderBy: { firstname: "asc" },
+    }),
+    prisma.department.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -64,7 +79,13 @@ export default async function TicketsPage() {
       />
       <div className="mt-6">
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">Board</h1>
-        <KanbanBoard tickets={tickets} adminUsers={adminUsers} />
+        <KanbanBoard
+          tickets={tickets}
+          adminUsers={adminUsers}
+          orgUsers={orgUsers}
+          departments={departments}
+          currentUserId={session.user.id!}
+        />
       </div>
     </div>
   );

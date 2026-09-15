@@ -21,11 +21,31 @@ export const TICKET_CATEGORIES = [
 ] as const;
 
 export const TICKET_PRIORITIES = [
+  { value: "very_low", label: "Very low" },
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
   { value: "urgent", label: "Urgent" },
 ] as const;
+
+export const TICKET_SCALE = [
+  { value: 1, label: "Very low" },
+  { value: 2, label: "Low" },
+  { value: 3, label: "Medium" },
+  { value: 4, label: "High" },
+  { value: 5, label: "Very high" },
+] as const;
+
+export const DEFAULT_TTO_MINUTES = 8 * 60;
+export const DEFAULT_TTR_MINUTES = 24 * 60;
+
+const PRIORITY_FROM_LEVEL = {
+  1: "very_low",
+  2: "low",
+  3: "medium",
+  4: "high",
+  5: "urgent",
+} as const;
 
 export const TICKET_CHIP_CLASS =
   "rounded-md border px-2 py-0.5 text-[10px] font-medium";
@@ -62,6 +82,7 @@ export const TICKET_TYPE_STYLES: Record<string, string> = {
 };
 
 export const TICKET_PRIORITY_STYLES: Record<string, string> = {
+  very_low: STATUS_MUTED,
   low: STATUS_MUTED,
   medium: STATUS_INFO,
   high: STATUS_WARNING,
@@ -84,6 +105,18 @@ export function ticketStatusLabel(status: string) {
 
 export function ticketTypeLabel(type: string) {
   return TICKET_TYPES.find((item) => item.value === type)?.label ?? type;
+}
+
+export function ticketPriorityLabel(priority: string) {
+  return (
+    TICKET_PRIORITIES.find((item) => item.value === priority)?.label ?? priority
+  );
+}
+
+export function ticketScaleLabel(value: number) {
+  return (
+    TICKET_SCALE.find((item) => item.value === value)?.label ?? String(value)
+  );
 }
 
 export function shortTicketId(id: string) {
@@ -123,6 +156,115 @@ export function ticketStatusDotStyle(status: string) {
   return TICKET_STATUS_DOT_STYLES[normalized] ?? TICKET_STATUS_DOT_STYLES.new;
 }
 
+export type TicketPriorityValue = (typeof TICKET_PRIORITIES)[number]["value"];
+
+export function clampTicketScale(value: number) {
+  if (!Number.isFinite(value)) return 3;
+  return Math.min(5, Math.max(1, Math.round(value)));
+}
+
+export function computePriorityLevel(urgency: number, impact: number) {
+  return clampTicketScale(
+    Math.round((clampTicketScale(urgency) + clampTicketScale(impact)) / 2),
+  ) as 1 | 2 | 3 | 4 | 5;
+}
+
+export function computePriority(
+  urgency: number,
+  impact: number,
+): TicketPriorityValue {
+  return PRIORITY_FROM_LEVEL[computePriorityLevel(urgency, impact)];
+}
+
+export function slaDueFrom(start: Date, minutes: number) {
+  return new Date(start.getTime() + minutes * 60_000);
+}
+
+export function applySlaPause(options: {
+  status: string;
+  nextStatus: string;
+  timeToOwn: Date | string | null | undefined;
+  timeToResolve: Date | string | null | undefined;
+  slaPausedAt: Date | string | null | undefined;
+  pauseOnPending?: boolean;
+  now?: Date;
+}) {
+  const now = options.now ?? new Date();
+  const current = normalizeTicketStatus(options.status);
+  const next = normalizeTicketStatus(options.nextStatus);
+  let timeToOwn = options.timeToOwn ? new Date(options.timeToOwn) : null;
+  let timeToResolve = options.timeToResolve
+    ? new Date(options.timeToResolve)
+    : null;
+  let slaPausedAt = options.slaPausedAt ? new Date(options.slaPausedAt) : null;
+  const pauseOnPending = options.pauseOnPending !== false;
+
+  if (!pauseOnPending || current === next) {
+    return { timeToOwn, timeToResolve, slaPausedAt };
+  }
+
+  if (current !== "pending" && next === "pending") {
+    slaPausedAt = now;
+  }
+
+  if (current === "pending" && next !== "pending" && slaPausedAt) {
+    const elapsed = now.getTime() - slaPausedAt.getTime();
+    if (timeToOwn) timeToOwn = new Date(timeToOwn.getTime() + elapsed);
+    if (timeToResolve) timeToResolve = new Date(timeToResolve.getTime() + elapsed);
+    slaPausedAt = null;
+  }
+
+  return { timeToOwn, timeToResolve, slaPausedAt };
+}
+
+export function ticketSlaState(
+  ticket: {
+    status: string;
+    timeToResolve?: Date | string | null;
+    slaPausedAt?: Date | string | null;
+  },
+  now = new Date(),
+) {
+  const status = normalizeTicketStatus(ticket.status);
+  if (status === "solved" || status === "closed") return "done";
+  if (status === "pending" && ticket.slaPausedAt) return "paused";
+  if (ticket.timeToResolve && new Date(ticket.timeToResolve) < now) {
+    return "overdue";
+  }
+  return "ok";
+}
+
+export type TicketActorLike = {
+  role: string;
+  userId?: string | null;
+  departmentId?: string | null;
+};
+
+export function isTicketAssignedToUser(
+  ticket: {
+    assignedTo: string | null;
+    actors?: TicketActorLike[];
+  },
+  userId: string,
+  departmentId?: string | null,
+) {
+  if (ticket.assignedTo === userId) return true;
+  return (ticket.actors ?? []).some(
+    (actor) =>
+      actor.role === "assignee" &&
+      (actor.userId === userId ||
+        (departmentId && actor.departmentId === departmentId)),
+  );
+}
+
+export function isTicketUnassigned(ticket: {
+  assignedTo: string | null;
+  actors?: TicketActorLike[];
+}) {
+  if (ticket.assignedTo) return false;
+  return !(ticket.actors ?? []).some((actor) => actor.role === "assignee");
+}
+
 export type TicketQueue = "all" | "unassigned" | "mine" | "open";
 
 const OPEN_STATUSES = new Set(["new", "processing", "pending", "in_progress"]);
@@ -140,12 +282,14 @@ export function filterInboxTickets<
     assignedTo: string | null;
     creator: { firstname: string; lastname: string };
     asset?: { assettag: string; assetname: string } | null;
+    actors?: TicketActorLike[];
   },
 >(
   tickets: T[],
   options: {
     isAdmin: boolean;
     currentUserId: string;
+    currentDepartmentId?: string | null;
     queue: TicketQueue;
     searchQuery: string;
     statusFilter: string;
@@ -159,9 +303,19 @@ export function filterInboxTickets<
     const status = normalizeTicketStatus(ticket.status);
 
     if (options.isAdmin) {
-      if (options.queue === "unassigned" && ticket.assignedTo) return false;
-      if (options.queue === "mine" && ticket.assignedTo !== options.currentUserId)
+      if (options.queue === "unassigned" && !isTicketUnassigned(ticket)) {
         return false;
+      }
+      if (
+        options.queue === "mine" &&
+        !isTicketAssignedToUser(
+          ticket,
+          options.currentUserId,
+          options.currentDepartmentId,
+        )
+      ) {
+        return false;
+      }
       if (options.queue === "open" && !OPEN_STATUSES.has(status)) return false;
     }
 

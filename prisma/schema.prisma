@@ -60,6 +60,7 @@ model Organization {
   purchaseRequests     PurchaseRequest[]
   purchaseOrders       PurchaseOrder[]
   storageConfig        OrganizationStorageConfig?
+  ticketSlaPolicies    ticket_sla_policies[]
 
   @@map("organizations")
   @@schema("public")
@@ -99,6 +100,7 @@ model Department {
   // Relationships
   users            user[]
   purchaseRequests PurchaseRequest[]
+  ticketActors     ticket_actors[]
 
   @@index([organizationId])
   @@index([parentId])
@@ -1006,27 +1008,39 @@ model ticket_comments {
 }
 
 model tickets {
-  id                            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ticketNumber                  Int               @unique @default(autoincrement())
-  title                         String            @db.VarChar(255)
+  id                            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketNumber                  Int                    @unique @default(autoincrement())
+  title                         String                 @db.VarChar(255)
   description                   String?
-  type                          String            @default("incident") @db.VarChar(20)
-  category                      String?           @db.VarChar(50)
-  status                        String            @default("new") @db.VarChar(20)
-  priority                      String            @default("medium") @db.VarChar(20)
-  createdBy                     String            @db.Uuid
-  assignedTo                    String?           @db.Uuid
-  assetId                       String?           @db.Uuid
+  type                          String                 @default("incident") @db.VarChar(20)
+  category                      String?                @db.VarChar(50)
+  status                        String                 @default("new") @db.VarChar(20)
+  priority                      String                 @default("medium") @db.VarChar(20)
+  urgency                       Int                    @default(3)
+  impact                        Int                    @default(3)
+  createdBy                     String                 @db.Uuid
+  assignedTo                    String?                @db.Uuid
+  assetId                       String?                @db.Uuid
   solution                      String?
-  solvedAt                      DateTime?         @db.Timestamp(6)
-  solvedBy                      String?           @db.Uuid
-  createdAt                     DateTime          @default(now()) @db.Timestamp(6)
-  updatedAt                     DateTime          @db.Timestamp(6)
+  solutionStatus                String                 @default("none") @db.VarChar(20)
+  globalValidation              String                 @default("none") @db.VarChar(20)
+  solvedAt                      DateTime?              @db.Timestamp(6)
+  solvedBy                      String?                @db.Uuid
+  timeToOwn                     DateTime?              @db.Timestamp(6)
+  timeToResolve                 DateTime?              @db.Timestamp(6)
+  slaPausedAt                   DateTime?              @db.Timestamp(6)
+  slaPolicyId                   String?                @db.Uuid
+  createdAt                     DateTime               @default(now()) @db.Timestamp(6)
+  updatedAt                     DateTime               @db.Timestamp(6)
   ticket_comments               ticket_comments[]
-  asset                         asset?            @relation(fields: [assetId], references: [assetid], onDelete: SetNull)
-  user_tickets_assignedToTouser user?             @relation("tickets_assignedToTouser", fields: [assignedTo], references: [userid])
-  user_tickets_createdByTouser  user              @relation("tickets_createdByTouser", fields: [createdBy], references: [userid], onDelete: Cascade)
-  user_tickets_solvedByTouser   user?             @relation("tickets_solvedByTouser", fields: [solvedBy], references: [userid], onDelete: SetNull)
+  actors                        ticket_actors[]
+  tasks                         ticket_tasks[]
+  validations                   ticket_validations[]
+  asset                         asset?                 @relation(fields: [assetId], references: [assetid], onDelete: SetNull)
+  slaPolicy                     ticket_sla_policies?   @relation(fields: [slaPolicyId], references: [id], onDelete: SetNull)
+  user_tickets_assignedToTouser user?                  @relation("tickets_assignedToTouser", fields: [assignedTo], references: [userid])
+  user_tickets_createdByTouser  user                   @relation("tickets_createdByTouser", fields: [createdBy], references: [userid], onDelete: Cascade)
+  user_tickets_solvedByTouser   user?                  @relation("tickets_solvedByTouser", fields: [solvedBy], references: [userid], onDelete: SetNull)
 
   @@index([status])
   @@index([createdBy])
@@ -1034,6 +1048,83 @@ model tickets {
   @@index([createdAt])
   @@index([type])
   @@index([assetId])
+  @@index([slaPolicyId])
+  @@index([timeToResolve])
+  @@schema("public")
+}
+
+model ticket_sla_policies {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String         @unique @db.Uuid
+  name           String         @default("Default") @db.VarChar(100)
+  ttoMinutes     Int            @default(480)
+  ttrMinutes     Int            @default(1440)
+  pauseOnPending Boolean        @default(true)
+  createdAt      DateTime       @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamp(6)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tickets        tickets[]
+
+  @@schema("public")
+}
+
+model ticket_actors {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId     String      @db.Uuid
+  role         String      @db.VarChar(20)
+  userId       String?     @db.Uuid
+  departmentId String?     @db.Uuid
+  createdAt    DateTime    @default(now()) @db.Timestamp(6)
+  ticket       tickets     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user         user?       @relation(fields: [userId], references: [userid], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([departmentId])
+  @@index([ticketId, role])
+  @@schema("public")
+}
+
+model ticket_tasks {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId      String    @db.Uuid
+  createdBy     String    @db.Uuid
+  assignedTo    String?   @db.Uuid
+  content       String
+  state         String    @default("todo") @db.VarChar(20)
+  begin         DateTime? @db.Timestamp(6)
+  end           DateTime? @db.Timestamp(6)
+  actionMinutes Int?
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @db.Timestamp(6)
+  ticket        tickets   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  creator       user      @relation("ticket_tasks_createdBy", fields: [createdBy], references: [userid], onDelete: Cascade)
+  assignee      user?     @relation("ticket_tasks_assignedTo", fields: [assignedTo], references: [userid], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([createdBy])
+  @@index([assignedTo])
+  @@schema("public")
+}
+
+model ticket_validations {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId           String    @db.Uuid
+  requestedBy        String    @db.Uuid
+  targetUserId       String    @db.Uuid
+  commentSubmission  String?
+  commentValidation  String?
+  status             String    @default("waiting") @db.VarChar(20)
+  createdAt          DateTime  @default(now()) @db.Timestamp(6)
+  decidedAt          DateTime? @db.Timestamp(6)
+  ticket             tickets   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  requester          user      @relation("ticket_validations_requestedBy", fields: [requestedBy], references: [userid], onDelete: Cascade)
+  target             user      @relation("ticket_validations_target", fields: [targetUserId], references: [userid], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([targetUserId])
+  @@index([status])
   @@schema("public")
 }
 
@@ -1087,6 +1178,11 @@ model user {
   saved_filters                    saved_filters[]
   sessions                         sessions[]
   ticket_comments                  ticket_comments[]
+  ticket_actors                    ticket_actors[]
+  ticket_tasks_created             ticket_tasks[]            @relation("ticket_tasks_createdBy")
+  ticket_tasks_assigned            ticket_tasks[]            @relation("ticket_tasks_assignedTo")
+  ticket_validations_requested     ticket_validations[]      @relation("ticket_validations_requestedBy")
+  ticket_validations_target        ticket_validations[]      @relation("ticket_validations_target")
   tickets_tickets_assignedToTouser tickets[]                 @relation("tickets_assignedToTouser")
   tickets_tickets_createdByTouser  tickets[]                 @relation("tickets_createdByTouser")
   tickets_tickets_solvedByTouser   tickets[]                 @relation("tickets_solvedByTouser")

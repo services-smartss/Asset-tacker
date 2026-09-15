@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import {
-  requireApiAdmin,
   requireApiAuth,
   requireNotDemoMode,
 } from "@/lib/api-auth";
@@ -16,8 +15,14 @@ import {
   notifyTicketStatusChanged,
 } from "@/lib/notifications";
 import { uuidSchema } from "@/lib/validation";
-import { mapTicket, ticketInclude } from "@/lib/ticket-query";
+import { mapTicket, ticketAccessWhere, ticketInclude } from "@/lib/ticket-query";
 import { Prisma } from "@prisma/client";
+import { applySlaPause } from "@/lib/ticket-ui";
+import {
+  ensureAssigneeActor,
+  priorityFromBody,
+  syncPrimaryAssignee,
+} from "@/lib/ticket-itsm";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -51,19 +56,13 @@ async function getLocalTicket(id: string) {
     const rawTicket = await prisma.tickets.findFirst({
       where: {
         id,
-        ...(orgId
-          ? { user_tickets_createdByTouser: { organizationId: orgId } }
-          : {}),
+        ...ticketAccessWhere(user, orgId),
       },
       include: ticketInclude,
     });
 
     if (!rawTicket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-    }
-
-    if (!user.isAdmin && rawTicket.createdBy !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json(mapTicket(rawTicket));
@@ -143,12 +142,21 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     const demoBlock = requireNotDemoMode();
     if (demoBlock) return demoBlock;
 
-    const user = await requireApiAdmin();
+    const user = await requireApiAuth();
     const { id } = await params;
     const body = await req.json();
 
-    const { status, priority, assignedTo, type, category, assetId, solution } =
-      body || {};
+    const {
+      status,
+      assignedTo,
+      type,
+      category,
+      assetId,
+      solution,
+      urgency,
+      impact,
+      solutionAction,
+    } = body || {};
 
     const orgContext = await getOrganizationContext();
     const orgId = orgContext?.organization?.id;
@@ -156,23 +164,97 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     const existingTicket = await prisma.tickets.findFirst({
       where: {
         id,
-        ...(orgId
-          ? { user_tickets_createdByTouser: { organizationId: orgId } }
-          : {}),
+        ...ticketAccessWhere(user, orgId),
       },
-      select: { status: true, assignedTo: true, title: true },
+      include: {
+        actors: { select: { role: true, userId: true } },
+        slaPolicy: {
+          select: { pauseOnPending: true },
+        },
+      },
     });
 
     if (!existingTicket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
+    const isRequester =
+      existingTicket.createdBy === user.id ||
+      existingTicket.actors.some(
+        (actor) => actor.role === "requester" && actor.userId === user.id,
+      );
+
+    if (solutionAction === "accept" || solutionAction === "refuse") {
+      if (!user.isAdmin && !isRequester) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const nextStatus =
+        solutionAction === "accept"
+          ? "solved"
+          : existingTicket.status === "closed"
+            ? "closed"
+            : "processing";
+
+      const sla = applySlaPause({
+        status: existingTicket.status,
+        nextStatus,
+        timeToOwn: existingTicket.timeToOwn,
+        timeToResolve: existingTicket.timeToResolve,
+        slaPausedAt: existingTicket.slaPausedAt,
+        pauseOnPending: existingTicket.slaPolicy?.pauseOnPending,
+      });
+
+      const rawTicket = await prisma.tickets.update({
+        where: { id },
+        data: {
+          solutionStatus: solutionAction === "accept" ? "accepted" : "refused",
+          status: nextStatus,
+          timeToOwn: sla.timeToOwn,
+          timeToResolve: sla.timeToResolve,
+          slaPausedAt: sla.slaPausedAt,
+          updatedAt: new Date(),
+        },
+        include: ticketInclude,
+      });
+
+      return NextResponse.json(mapTicket(rawTicket), { status: 200 });
+    }
+
+    if (!user.isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 },
+      );
+    }
+
     const updateData: Prisma.ticketsUpdateInput = {
       updatedAt: new Date(),
     };
 
-    if (status) updateData.status = status;
-    if (priority) updateData.priority = priority;
+    if (status) {
+      const sla = applySlaPause({
+        status: existingTicket.status,
+        nextStatus: status,
+        timeToOwn: existingTicket.timeToOwn,
+        timeToResolve: existingTicket.timeToResolve,
+        slaPausedAt: existingTicket.slaPausedAt,
+        pauseOnPending: existingTicket.slaPolicy?.pauseOnPending,
+      });
+      updateData.status = status;
+      updateData.timeToOwn = sla.timeToOwn;
+      updateData.timeToResolve = sla.timeToResolve;
+      updateData.slaPausedAt = sla.slaPausedAt;
+    }
+    if (urgency !== undefined || impact !== undefined) {
+      const matrix = priorityFromBody({
+        urgency: urgency ?? existingTicket.urgency,
+        impact: impact ?? existingTicket.impact,
+      });
+      updateData.urgency = matrix.urgency;
+      updateData.impact = matrix.impact;
+      updateData.priority = matrix.priority;
+    }
     if (assignedTo !== undefined) {
       updateData.user_tickets_assignedToTouser = assignedTo
         ? { connect: { userid: assignedTo } }
@@ -201,22 +283,34 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
     if (typeof solution === "string" && solution.trim()) {
       updateData.solution = solution.trim();
+      updateData.solutionStatus = "waiting";
       updateData.solvedAt = new Date();
       if (user.id) {
         updateData.user_tickets_solvedByTouser = {
           connect: { userid: user.id },
         };
       }
-      if (existingTicket.status !== "closed" && !status) {
-        updateData.status = "solved";
-      }
     }
 
-    const rawTicket = await prisma.tickets.update({
+    let rawTicket = await prisma.tickets.update({
       where: { id },
       data: updateData,
       include: ticketInclude,
     });
+
+    if (assignedTo !== undefined) {
+      await prisma.ticket_actors.deleteMany({
+        where: { ticketId: id, role: "assignee", userId: { not: null } },
+      });
+      if (assignedTo) {
+        await ensureAssigneeActor(id, assignedTo);
+      }
+      await syncPrimaryAssignee(id);
+      rawTicket = await prisma.tickets.findUniqueOrThrow({
+        where: { id },
+        include: ticketInclude,
+      });
+    }
 
     const ticket = mapTicket(rawTicket);
     const nextStatus = (updateData.status as string | undefined) ?? status;

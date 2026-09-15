@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { NewTicketForm } from "@/app/user/tickets/ui/NewTicketForm";
 import { TicketDetailPanel } from "./TicketDetailPanel";
-import type { Ticket as TicketRecord, TicketAdminUser } from "@/types/ticket";
+import type { Ticket as TicketRecord, TicketAdminUser, TicketDepartment } from "@/types/ticket";
 import {
   TICKET_CHIP_CLASS,
   TICKET_PRIORITIES,
@@ -26,6 +26,8 @@ import {
   displayTicketNumber,
   displayUserName,
   filterInboxTickets,
+  ticketPriorityLabel,
+  ticketSlaState,
   ticketStatusLabel,
   ticketStatusStyle,
   type TicketQueue,
@@ -36,14 +38,20 @@ interface TicketsPageClientProps {
   tickets: TicketRecord[];
   isAdmin: boolean;
   currentUserId: string;
+  currentDepartmentId?: string | null;
   adminUsers: TicketAdminUser[];
+  orgUsers: TicketAdminUser[];
+  departments: TicketDepartment[];
 }
 
 export default function TicketsPageClient({
   tickets: initialTickets,
   isAdmin,
   currentUserId,
+  currentDepartmentId = null,
   adminUsers,
+  orgUsers,
+  departments,
 }: TicketsPageClientProps) {
   const [tickets, setTickets] = useState<TicketRecord[]>(initialTickets);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -60,6 +68,7 @@ export default function TicketsPageClient({
       filterInboxTickets(tickets, {
         isAdmin,
         currentUserId,
+        currentDepartmentId,
         queue,
         searchQuery,
         statusFilter,
@@ -69,6 +78,7 @@ export default function TicketsPageClient({
       tickets,
       isAdmin,
       currentUserId,
+      currentDepartmentId,
       queue,
       searchQuery,
       statusFilter,
@@ -89,6 +99,9 @@ export default function TicketsPageClient({
       {
         ...newTicket,
         comments: newTicket.comments ?? [],
+        actors: newTicket.actors ?? [],
+        tasks: newTicket.tasks ?? [],
+        validations: newTicket.validations ?? [],
         type: newTicket.type ?? "incident",
         category: newTicket.category ?? null,
         asset: newTicket.asset ?? null,
@@ -102,7 +115,7 @@ export default function TicketsPageClient({
 
   const handleUpdate = async (
     ticketId: string,
-    updates: Partial<TicketRecord> & { solution?: string },
+    updates: Partial<TicketRecord> & { solution?: string; solutionAction?: string },
   ) => {
     const response = await fetch(`/api/tickets/${ticketId}`, {
       method: "PATCH",
@@ -118,13 +131,17 @@ export default function TicketsPageClient({
     const updatedTicket = (await response.json()) as TicketRecord;
     setTickets((prev) =>
       prev.map((ticket) =>
-        ticket.id === ticketId
-          ? { ...ticket, ...updatedTicket, comments: ticket.comments }
-          : ticket,
+        ticket.id === ticketId ? { ...ticket, ...updatedTicket } : ticket,
       ),
     );
-    if (!updates.solution) {
+    if (!updates.solution && !updates.solutionAction) {
       toast.success("Ticket updated");
+    }
+    if (updates.solutionAction === "accept") {
+      toast.success("Solution accepted");
+    }
+    if (updates.solutionAction === "refuse") {
+      toast.success("Solution refused");
     }
   };
 
@@ -358,10 +375,21 @@ export default function TicketsPageClient({
                               {ticketStatusLabel(ticket.status)}
                             </span>
                             <span
-                              className={`${TICKET_CHIP_CLASS} capitalize ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
+                              className={`${TICKET_CHIP_CLASS} ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
                             >
-                              {ticket.priority}
+                              {ticketPriorityLabel(ticket.priority)}
                             </span>
+                            {ticketSlaState(ticket) === "overdue" && (
+                              <span className={`${TICKET_CHIP_CLASS} bg-destructive/10 text-destructive border-destructive/30`}>
+                                Overdue
+                              </span>
+                            )}
+                            {ticket.timeToResolve &&
+                              ticketSlaState(ticket) === "ok" && (
+                                <span className={`${TICKET_CHIP_CLASS} bg-muted text-muted-foreground`}>
+                                  TTR {new Date(ticket.timeToResolve).toLocaleDateString()}
+                                </span>
+                              )}
                           </div>
                         </div>
                         <p
@@ -392,10 +420,22 @@ export default function TicketsPageClient({
                 <TicketDetailPanel
                   ticket={visibleSelected}
                   isAdmin={isAdmin}
+                  currentUserId={currentUserId}
                   adminUsers={adminUsers}
+                  orgUsers={orgUsers}
+                  departments={departments}
                   onBack={() => setSelectedId(null)}
                   onUpdate={handleUpdate}
                   onAddComment={handleAddComment}
+                  onTicketChange={(updated) =>
+                    setTickets((prev) =>
+                      prev.map((ticket) =>
+                        ticket.id === updated.id
+                          ? { ...ticket, ...updated }
+                          : ticket,
+                      ),
+                    )
+                  }
                 />
               ) : (
                 <EmptyState

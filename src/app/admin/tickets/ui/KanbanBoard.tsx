@@ -19,24 +19,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Ticket } from "@/types/ticket";
+import type { Ticket, TicketAdminUser, TicketDepartment } from "@/types/ticket";
 import { TICKET_STATUSES, normalizeTicketStatus, ticketStatusDotStyle } from "@/lib/ticket-ui";
-
-interface AdminUser {
-  userid: string;
-  username: string | null;
-  firstname: string;
-  lastname: string;
-}
 
 interface KanbanBoardProps {
   tickets: Ticket[];
-  adminUsers: AdminUser[];
+  adminUsers: TicketAdminUser[];
+  orgUsers: TicketAdminUser[];
+  departments: TicketDepartment[];
+  currentUserId: string;
 }
 
 export default function KanbanBoard({
   tickets: initialTickets,
   adminUsers,
+  orgUsers,
+  departments,
+  currentUserId,
 }: KanbanBoardProps) {
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
@@ -91,11 +90,7 @@ export default function KanbanBoard({
       setTickets((prevTickets) =>
         prevTickets.map((ticket) =>
           ticket.id === ticketId
-            ? {
-                ...ticket,
-                ...updatedTicket,
-                comments: updatedTicket.comments ?? ticket.comments,
-              }
+            ? { ...ticket, ...updatedTicket }
             : ticket,
         ),
       );
@@ -110,7 +105,7 @@ export default function KanbanBoard({
 
   const handleUpdateTicket = async (
     ticketId: string,
-    updates: Partial<Ticket> & { solution?: string },
+    updates: Partial<Ticket> & { solution?: string; solutionAction?: string },
   ) => {
     try {
       const response = await fetch(`/api/tickets/${ticketId}`, {
@@ -130,16 +125,12 @@ export default function KanbanBoard({
       setTickets((prevTickets) =>
         prevTickets.map((ticket) =>
           ticket.id === ticketId
-            ? {
-                ...ticket,
-                ...updatedTicket,
-                comments: updatedTicket.comments ?? ticket.comments,
-              }
+            ? { ...ticket, ...updatedTicket }
             : ticket,
         ),
       );
 
-      if (!updates.solution) {
+      if (!updates.solution && !updates.solutionAction) {
         toast.success("Ticket updated");
       }
     } catch (error) {
@@ -222,11 +213,21 @@ export default function KanbanBoard({
             <TicketDetailPanel
               ticket={selectedTicket}
               isAdmin
+              currentUserId={currentUserId}
               adminUsers={adminUsers}
+              orgUsers={orgUsers}
+              departments={departments}
               className="h-full min-h-0 pr-10"
               onBack={() => setSelectedId(null)}
               onUpdate={handleUpdateTicket}
               onAddComment={handleAddComment}
+              onTicketChange={(updated) =>
+                setTickets((prev) =>
+                  prev.map((ticket) =>
+                    ticket.id === updated.id ? { ...ticket, ...updated } : ticket,
+                  ),
+                )
+              }
             />
           ) : null}
         </DialogContent>

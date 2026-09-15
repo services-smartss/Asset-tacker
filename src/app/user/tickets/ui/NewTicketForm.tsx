@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { AssetPicker } from "@/app/tickets/ui/AssetPicker";
 import {
   TICKET_CATEGORIES,
-  TICKET_PRIORITIES,
+  TICKET_SCALE,
   TICKET_TYPES,
+  computePriority,
+  ticketPriorityLabel,
 } from "@/lib/ticket-ui";
 import type { Ticket, TicketAsset } from "@/types/ticket";
 
@@ -29,7 +31,8 @@ interface NewTicketFormProps {
 export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("medium");
+  const [urgency, setUrgency] = useState(3);
+  const [impact, setImpact] = useState(3);
   const [type, setType] = useState("incident");
   const [category, setCategory] = useState("");
   const [asset, setAsset] = useState<TicketAsset | null>(null);
@@ -54,7 +57,8 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
         body: JSON.stringify({
           title,
           description: description.trim() || null,
-          priority,
+          urgency,
+          impact,
           type,
           category: category || null,
           assetId: asset?.assetid ?? null,
@@ -146,21 +150,48 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
           />
         </div>
 
-        <div>
-          <Label htmlFor="priority">Priority</Label>
-          <Select value={priority} onValueChange={setPriority}>
-            <SelectTrigger id="priority">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TICKET_PRIORITIES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="urgency">Urgency</Label>
+            <Select
+              value={String(urgency)}
+              onValueChange={(value) => setUrgency(Number(value))}
+            >
+              <SelectTrigger id="urgency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TICKET_SCALE.map((item) => (
+                  <SelectItem key={item.value} value={String(item.value)}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="impact">Impact</Label>
+            <Select
+              value={String(impact)}
+              onValueChange={(value) => setImpact(Number(value))}
+            >
+              <SelectTrigger id="impact">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TICKET_SCALE.map((item) => (
+                  <SelectItem key={item.value} value={String(item.value)}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+        <p className="text-muted-foreground text-xs">
+          Priority {ticketPriorityLabel(computePriority(urgency, impact))}{" "}
+          (from urgency × impact)
+        </p>
 
         <div className="flex gap-3">
           <Button type="submit" disabled={isSubmitting}>

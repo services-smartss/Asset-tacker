@@ -5,21 +5,24 @@ import Breadcrumb from "@/components/Breadcrumb";
 import TicketsPageClient from "./ui/TicketsPageClient";
 import prisma from "@/lib/prisma";
 import { getOrganizationContext } from "@/lib/organization-context";
-import { mapTicket, ticketInclude } from "@/lib/ticket-query";
+import { mapTicket, ticketAccessWhere, ticketInclude } from "@/lib/ticket-query";
 
 export const metadata = {
   title: "Tickets - Asset Tracker",
   description: "Open and manage support tickets",
 };
 
-async function getInboxTickets(userId: string, isAdmin: boolean) {
+async function getInboxTickets(
+  userId: string,
+  isAdmin: boolean,
+  departmentId: string | null,
+) {
   const orgContext = await getOrganizationContext();
   const orgId = orgContext?.organization?.id;
-  const where = isAdmin
-    ? orgId
-      ? { user_tickets_createdByTouser: { organizationId: orgId } }
-      : {}
-    : { createdBy: userId };
+  const where = ticketAccessWhere(
+    { id: userId, isAdmin, departmentId },
+    orgId,
+  );
 
   const rawTickets = await prisma.tickets.findMany({
     where,
@@ -30,17 +33,26 @@ async function getInboxTickets(userId: string, isAdmin: boolean) {
   return rawTickets.map((ticket) => mapTicket(ticket));
 }
 
-async function getAdminUsers() {
-  return prisma.user.findMany({
-    where: { isadmin: true },
-    select: {
-      userid: true,
-      username: true,
-      firstname: true,
-      lastname: true,
-    },
-    orderBy: { firstname: "asc" },
-  });
+async function getOrgDirectory(organizationId?: string) {
+  const where = organizationId ? { organizationId } : {};
+  const [orgUsers, departments] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        userid: true,
+        username: true,
+        firstname: true,
+        lastname: true,
+      },
+      orderBy: { firstname: "asc" },
+    }),
+    prisma.department.findMany({
+      where: organizationId ? { organizationId } : {},
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+  return { orgUsers, departments };
 }
 
 export default async function Page() {
@@ -52,9 +64,26 @@ export default async function Page() {
 
   const isAdmin = session.user.isadmin || false;
   const userId = session.user.id!;
-  const [tickets, adminUsers] = await Promise.all([
-    getInboxTickets(userId, isAdmin),
-    isAdmin ? getAdminUsers() : Promise.resolve([]),
+  const orgContext = await getOrganizationContext();
+  const me = await prisma.user.findUnique({
+    where: { userid: userId },
+    select: { departmentId: true, organizationId: true },
+  });
+  const [{ orgUsers, departments }, tickets, adminUsers] = await Promise.all([
+    getOrgDirectory(me?.organizationId ?? orgContext?.organization?.id),
+    getInboxTickets(userId, isAdmin, me?.departmentId ?? null),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { isadmin: true },
+          select: {
+            userid: true,
+            username: true,
+            firstname: true,
+            lastname: true,
+          },
+          orderBy: { firstname: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -69,7 +98,10 @@ export default async function Page() {
         tickets={tickets}
         isAdmin={isAdmin}
         currentUserId={userId}
+        currentDepartmentId={me?.departmentId ?? null}
         adminUsers={adminUsers}
+        orgUsers={orgUsers}
+        departments={departments}
       />
     </>
   );

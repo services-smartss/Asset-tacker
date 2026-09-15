@@ -11,9 +11,14 @@ import {
   buildPrismaArgs,
   buildPaginatedResponse,
 } from "@/lib/pagination";
-import { mapTicket, ticketInclude } from "@/lib/ticket-query";
+import { mapTicket, ticketAccessWhere, ticketInclude } from "@/lib/ticket-query";
 import { uuidSchema } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import {
+  ensureSlaPolicy,
+  priorityFromBody,
+  slaDatesForCreate,
+} from "@/lib/ticket-itsm";
 
 const TICKET_SORT_FIELDS = [
   "title",
@@ -45,11 +50,7 @@ async function getLocalTickets(url: URL) {
     // Scope tickets to user's organization (through creator's org)
     const orgContext = await getOrganizationContext();
     const orgId = orgContext?.organization?.id;
-    const where: Record<string, unknown> = user.isAdmin
-      ? orgId
-        ? { user_tickets_createdByTouser: { organizationId: orgId } }
-        : {}
-      : { createdBy: user.id };
+    const where: Record<string, unknown> = ticketAccessWhere(user, orgId);
 
     const include = ticketInclude;
 
@@ -172,7 +173,8 @@ export async function POST(req: Request) {
     const user = await requireApiAuth();
     const body = await req.json();
 
-    const { title, description, priority, type, category, assetId } = body || {};
+    const { title, description, type, category, assetId, urgency, impact } =
+      body || {};
 
     if (!title) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -194,21 +196,40 @@ export async function POST(req: Request) {
       }
     }
 
+    const matrix = priorityFromBody({ urgency, impact });
+    const orgContext = await getOrganizationContext();
+    const policy = await ensureSlaPolicy(
+      user.organizationId ?? orgContext?.organization?.id,
+    );
+    const now = new Date();
+    const sla = slaDatesForCreate(now, policy);
+
     const rawTicket = await prisma.tickets.create({
       data: {
         title,
         description: description || null,
-        priority: priority || "medium",
+        priority: matrix.priority,
+        urgency: matrix.urgency,
+        impact: matrix.impact,
         type: ticketType,
         category: category || null,
+        timeToOwn: sla.timeToOwn,
+        timeToResolve: sla.timeToResolve,
+        ...(policy.id ? { slaPolicy: { connect: { id: policy.id } } } : {}),
         user_tickets_createdByTouser: {
           connect: { userid: user.id! },
+        },
+        actors: {
+          create: {
+            role: "requester",
+            userId: user.id!,
+          },
         },
         ...(linkedAssetId
           ? { asset: { connect: { assetid: linkedAssetId } } }
           : {}),
         status: "new",
-        updatedAt: new Date(),
+        updatedAt: now,
       },
       include: ticketInclude,
     });

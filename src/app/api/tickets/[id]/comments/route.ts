@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireApiAuth, requireNotDemoMode } from "@/lib/api-auth";
 import { logger } from "@/lib/logger";
 import { notifyTicketComment } from "@/lib/notifications";
+import { ensureAssigneeActor } from "@/lib/ticket-itsm";
 
 // POST /api/tickets/[id]/comments
 // Add a comment to a ticket
@@ -81,6 +82,9 @@ export async function POST(
           updatedAt: new Date(),
         },
       });
+      if (user.id) {
+        await ensureAssigneeActor(id, user.id);
+      }
     }
 
     // Fire-and-forget: notify ticket creator about the new comment (skip self-notifications)

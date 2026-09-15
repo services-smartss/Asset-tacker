@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  applySlaPause,
+  computePriority,
+  computePriorityLevel,
   displayTicketAsset,
   displayTicketNumber,
   displayUserName,
   filterInboxTickets,
+  isTicketAssignedToUser,
   shortTicketId,
   ticketStatusLabel,
   ticketTypeLabel,
@@ -149,5 +153,66 @@ describe("ticket-ui", () => {
         searchQuery: "thinkpad",
       }),
     ).toHaveLength(1);
+  });
+
+  it("computes GLPI fallback priority from urgency and impact", () => {
+    expect(computePriorityLevel(3, 3)).toBe(3);
+    expect(computePriority(3, 3)).toBe("medium");
+    expect(computePriority(5, 5)).toBe("urgent");
+    expect(computePriority(1, 1)).toBe("very_low");
+    expect(computePriority(2, 5)).toBe("high");
+    expect(computePriority(0, 9)).toBe("medium");
+  });
+
+  it("pauses and resumes SLA due dates on pending", () => {
+    const start = new Date("2026-09-15T00:00:00.000Z");
+    const own = new Date("2026-09-15T08:00:00.000Z");
+    const resolve = new Date("2026-09-16T00:00:00.000Z");
+    const paused = applySlaPause({
+      status: "processing",
+      nextStatus: "pending",
+      timeToOwn: own,
+      timeToResolve: resolve,
+      slaPausedAt: null,
+      now: start,
+    });
+    expect(paused.slaPausedAt?.toISOString()).toBe(start.toISOString());
+
+    const resumed = applySlaPause({
+      status: "pending",
+      nextStatus: "processing",
+      timeToOwn: own,
+      timeToResolve: resolve,
+      slaPausedAt: start,
+      now: new Date("2026-09-15T02:00:00.000Z"),
+    });
+    expect(resumed.slaPausedAt).toBeNull();
+    expect(resumed.timeToOwn?.toISOString()).toBe("2026-09-15T10:00:00.000Z");
+    expect(resumed.timeToResolve?.toISOString()).toBe(
+      "2026-09-16T02:00:00.000Z",
+    );
+  });
+
+  it("treats department assignees as mine", () => {
+    const deptTicket = {
+      ...tickets[0],
+      assignedTo: null,
+      actors: [{ role: "assignee", departmentId: "dept-it", userId: null }],
+    };
+    expect(isTicketAssignedToUser(deptTicket, adminId, "dept-it")).toBe(true);
+    expect(
+      filterInboxTickets([deptTicket], {
+        ...baseOptions,
+        queue: "mine",
+        currentDepartmentId: "dept-it",
+      }),
+    ).toHaveLength(1);
+    expect(
+      filterInboxTickets([deptTicket], {
+        ...baseOptions,
+        queue: "unassigned",
+        currentDepartmentId: "dept-it",
+      }),
+    ).toHaveLength(0);
   });
 });
