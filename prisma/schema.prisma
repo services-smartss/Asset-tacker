@@ -61,6 +61,7 @@ model Organization {
   purchaseOrders       PurchaseOrder[]
   storageConfig        OrganizationStorageConfig?
   ticketSlaPolicies    ticket_sla_policies[]
+  ticketCategories     ticket_categories[]
 
   @@map("organizations")
   @@schema("public")
@@ -1007,13 +1008,28 @@ model ticket_comments {
   @@schema("public")
 }
 
+model ticket_categories {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String        @db.VarChar(100)
+  organizationId String?       @db.Uuid
+  sortOrder      Int           @default(0)
+  createdAt      DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime      @updatedAt @db.Timestamp(6)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("ticket_categories")
+  @@schema("public")
+}
+
 model tickets {
   id                            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketNumber                  Int                    @unique @default(autoincrement())
   title                         String                 @db.VarChar(255)
   description                   String?
   type                          String                 @default("incident") @db.VarChar(20)
-  category                      String?                @db.VarChar(50)
+  category                      String?                @db.VarChar(100)
   status                        String                 @default("new") @db.VarChar(20)
   priority                      String                 @default("medium") @db.VarChar(20)
   urgency                       Int                    @default(3)

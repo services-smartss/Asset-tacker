@@ -336,6 +336,12 @@ const th: Record<string, string> = {
   "page.board.title": "บอร์ด",
   "page.kits.title": "ชุดอุปกรณ์",
   "page.components.title": "ชิ้นส่วน",
+  "page.ticketCategories.title": "หมวดหมู่ทิกเก็ต",
+  "page.ticketCategories.subtitle": "เพิ่มและแก้ไขหมวดที่ใช้กับทิกเก็ต",
+  "page.ticketCategories.create": "สร้างหมวดทิกเก็ต",
+  "page.ticketCategories.edit": "แก้ไขหมวดทิกเก็ต",
+  "nav.ticketCategories": "หมวดหมู่ทิกเก็ต",
+
   "ticket.title": "ทิกเก็ต",
   "ticket.subtitle": "เปิด มอบหมาย และตอบคำขอสนับสนุนในกล่องเดียว",
   "ticket.new": "ทิกเก็ตใหม่",

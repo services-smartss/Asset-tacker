@@ -194,4 +194,5 @@ export const AUDIT_ENTITIES = {
   AUDIT_CAMPAIGN: "audit_campaign",
   REPORT_SCHEDULE: "report_schedule",
   INTUNE_SYNC: "intune_sync",
+  TICKET_CATEGORY: "ticket_category",
 } as const;

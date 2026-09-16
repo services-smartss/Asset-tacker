@@ -26,7 +26,6 @@ import type {
   TicketValidation,
 } from "@/types/ticket";
 import {
-  TICKET_CATEGORIES,
   TICKET_CHIP_CLASS,
   TICKET_OVERDUE_CHIP,
   TICKET_PRIORITY_STYLES,
@@ -47,6 +46,7 @@ import {
   ticketTypeLabel,
 } from "@/lib/ticket-ui";
 import { cn } from "@/lib/utils";
+import { useTicketCategories } from "@/hooks/useTicketCategories";
 import { AssetPicker } from "./AssetPicker";
 
 const COMPOSER_FILL = {
@@ -138,6 +138,7 @@ export function TicketDetailPanel({
   onTicketChange,
 }: TicketDetailPanelProps) {
   const { t, locale } = useI18n();
+  const { categories } = useTicketCategories();
   const dateLocale = locale === "th" ? "th-TH" : undefined;
 
   const statusLabel = (status: string) => {
@@ -166,9 +167,7 @@ export function TicketDetailPanel({
 
   const categoryLabel = (value: string | null) => {
     if (!value) return t("ticket.category.none");
-    const key = `ticket.category.${value}`;
-    const translated = t(key);
-    return translated === key ? value : translated;
+    return value;
   };
 
   const [composer, setComposer] = useState<"follow-up" | "task" | "solution">(
@@ -584,11 +583,17 @@ export function TicketDetailPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("ticket.category.none")}</SelectItem>
-                  {TICKET_CATEGORIES.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {categoryLabel(item.value)}
+                  {categories.map((item) => (
+                    <SelectItem key={item.id} value={item.name}>
+                      {item.name}
                     </SelectItem>
                   ))}
+                  {ticket.category &&
+                    !categories.some((item) => item.name === ticket.category) && (
+                      <SelectItem value={ticket.category}>
+                        {ticket.category}
+                      </SelectItem>
+                    )}
                 </SelectContent>
               </Select>
             ) : (

@@ -373,6 +373,11 @@ const en: Record<string, string> = {
   "page.board.title": "Board",
   "page.kits.title": "Kits",
   "page.components.title": "Components",
+  "page.ticketCategories.title": "Ticket Categories",
+  "page.ticketCategories.subtitle": "Add and edit categories used on tickets",
+  "page.ticketCategories.create": "Create Ticket Category",
+  "page.ticketCategories.edit": "Edit Ticket Category",
+  "nav.ticketCategories": "Ticket Categories",
 
   // Tickets
   "ticket.title": "Tickets",

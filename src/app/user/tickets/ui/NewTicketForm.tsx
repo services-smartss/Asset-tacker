@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useI18n } from "@/hooks/useI18n";
+import { useTicketCategories } from "@/hooks/useTicketCategories";
 import { AssetPicker } from "@/app/tickets/ui/AssetPicker";
 import {
-  TICKET_CATEGORIES,
   TICKET_SCALE,
   TICKET_TYPES,
   computePriority,
@@ -36,6 +36,7 @@ export function NewTicketForm({
   embedded = false,
 }: NewTicketFormProps) {
   const { t } = useI18n();
+  const { categories } = useTicketCategories();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState(3);
@@ -49,12 +50,6 @@ export function NewTicketForm({
     const key = `ticket.priority.${priority}`;
     const translated = t(key);
     return translated === key ? ticketPriorityLabel(priority) : translated;
-  };
-
-  const categoryLabel = (value: string) => {
-    const key = `ticket.category.${value}`;
-    const translated = t(key);
-    return translated === key ? value : translated;
   };
 
   const scaleLabel = (value: number) => {
@@ -140,9 +135,9 @@ export function NewTicketForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">{t("ticket.category.none")}</SelectItem>
-                {TICKET_CATEGORIES.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {categoryLabel(item.value)}
+                {categories.map((item) => (
+                  <SelectItem key={item.id} value={item.name}>
+                    {item.name}
                   </SelectItem>
                 ))}
               </SelectContent>

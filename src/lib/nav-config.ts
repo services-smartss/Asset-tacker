@@ -136,6 +136,12 @@ export const navSections: NavSection[] = [
         icon: CircleDot,
         adminOnly: true,
       },
+      {
+        label: "nav.ticketCategories",
+        href: "/admin/ticket-categories",
+        icon: Ticket,
+        adminOnly: true,
+      },
     ],
   },
   {

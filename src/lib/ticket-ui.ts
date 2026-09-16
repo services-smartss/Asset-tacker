@@ -11,14 +11,21 @@ export const TICKET_TYPES = [
   { value: "request", label: "Request" },
 ] as const;
 
-export const TICKET_CATEGORIES = [
-  { value: "Hardware", label: "Hardware" },
-  { value: "Software", label: "Software" },
-  { value: "Network", label: "Network" },
-  { value: "Access", label: "Access" },
-  { value: "Printer", label: "Printer" },
-  { value: "Other", label: "Other" },
+/** Default names seeded into ticket_categories when an org has none. */
+export const DEFAULT_TICKET_CATEGORY_NAMES = [
+  "Hardware",
+  "Software",
+  "Network",
+  "Access",
+  "Printer",
+  "Other",
 ] as const;
+
+/** @deprecated Use ticket categories from /api/ticket-categories */
+export const TICKET_CATEGORIES = DEFAULT_TICKET_CATEGORY_NAMES.map((name) => ({
+  value: name,
+  label: name,
+}));
 
 export const TICKET_PRIORITIES = [
   { value: "very_low", label: "Very low" },
