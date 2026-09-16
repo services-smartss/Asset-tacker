@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function ResetPasswordForm() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
   const email = searchParams.get("email") || "";
@@ -25,17 +27,17 @@ export default function ResetPasswordForm() {
     setError("");
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("auth.register.passwordMinLength"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.register.passwordMismatch"));
       return;
     }
 
     if (!token || !email) {
-      setError("Invalid reset link. Please request a new one.");
+      setError(t("common.errorOccurred"));
       return;
     }
 
@@ -51,13 +53,13 @@ export default function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to reset password");
+        setError(data.error || t("common.errorOccurred"));
         return;
       }
 
       setSuccess(true);
     } catch {
-      setError("An error occurred. Please try again.");
+      setError(t("auth.login.error"));
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +71,9 @@ export default function ResetPasswordForm() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
-              <p className="text-destructive">Invalid reset link. Please request a new password reset.</p>
+              <p className="text-destructive">{t("common.errorOccurred")}</p>
               <Link href="/forgot-password">
-                <Button>Request New Reset Link</Button>
+                <Button>{t("auth.forgotPassword.submit")}</Button>
               </Link>
             </div>
           </CardContent>
@@ -84,8 +86,10 @@ export default function ResetPasswordForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-          <CardDescription>Enter your new password</CardDescription>
+          <CardTitle className="text-2xl font-bold">
+            {t("auth.resetPassword.title")}
+          </CardTitle>
+          <CardDescription>{t("auth.login.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (
@@ -93,21 +97,21 @@ export default function ResetPasswordForm() {
               <div className="rounded-md bg-green-500/10 p-4 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <p className="text-sm text-foreground">
-                  Your password has been reset successfully.
+                  {t("common.savedSuccessfully")}
                 </p>
               </div>
               <Link href="/login">
-                <Button className="w-full">Go to Login</Button>
+                <Button className="w-full">{t("auth.backToLogin")}</Button>
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter new password"
+                  placeholder={t("auth.password.placeholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -115,15 +119,17 @@ export default function ResetPasswordForm() {
                   minLength={8}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters
+                  {t("auth.register.passwordMinLength")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Label htmlFor="confirm-password">
+                  {t("auth.confirmPassword")}
+                </Label>
                 <Input
                   id="confirm-password"
                   type="password"
-                  placeholder="Confirm new password"
+                  placeholder={t("auth.password.placeholder")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
@@ -136,7 +142,9 @@ export default function ResetPasswordForm() {
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Resetting..." : "Reset Password"}
+                {isLoading
+                  ? t("auth.login.submitting")
+                  : t("auth.resetPassword.submit")}
               </Button>
             </form>
           )}

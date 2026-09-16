@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import {
   Table,
   TableBody,
@@ -125,6 +126,7 @@ function parseActions(raw: string): ActionConfig[] {
 }
 
 export default function WorkflowsPageClient() {
+  const { t } = useI18n();
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -535,7 +537,7 @@ export default function WorkflowsPageClient() {
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold">
             <Zap className="h-7 w-7" />
-            Automation Rules
+            {t("page.workflows.title")}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Configure automated workflows triggered by asset events

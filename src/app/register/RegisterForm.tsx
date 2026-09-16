@@ -13,8 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function RegisterForm() {
+  const { t } = useI18n();
   const router = useRouter();
   const [formData, setFormData] = useState({
     firstname: "",
@@ -40,12 +42,12 @@ export default function RegisterForm() {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("auth.register.passwordMismatch"));
       return;
     }
 
     if (formData.password.length < 12) {
-      setError("Password must be at least 12 characters.");
+      setError(t("auth.register.passwordMinLength"));
       return;
     }
 
@@ -68,7 +70,7 @@ export default function RegisterForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Registration failed. Please try again.");
+        setError(data.message || t("auth.register.failed"));
         setIsLoading(false);
         return;
       }
@@ -76,7 +78,7 @@ export default function RegisterForm() {
       router.push("/login?registered=true");
     } catch (err) {
       console.error("Registration error:", err);
-      setError("An unexpected error occurred. Please try again.");
+      setError(t("auth.register.unexpectedError"));
       setIsLoading(false);
     }
   };
@@ -86,22 +88,20 @@ export default function RegisterForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
-            Create an Account
+            {t("auth.register.title")}
           </CardTitle>
-          <CardDescription>
-            Register to start tracking your assets
-          </CardDescription>
+          <CardDescription>{t("auth.register.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstname">First Name</Label>
+                <Label htmlFor="firstname">{t("auth.firstName")}</Label>
                 <Input
                   id="firstname"
                   name="firstname"
                   type="text"
-                  placeholder="First name"
+                  placeholder={t("auth.firstName")}
                   value={formData.firstname}
                   onChange={handleChange}
                   disabled={isLoading}
@@ -109,12 +109,12 @@ export default function RegisterForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastname">Last Name</Label>
+                <Label htmlFor="lastname">{t("auth.lastName")}</Label>
                 <Input
                   id="lastname"
                   name="lastname"
                   type="text"
-                  placeholder="Last name"
+                  placeholder={t("auth.lastName")}
                   value={formData.lastname}
                   onChange={handleChange}
                   disabled={isLoading}
@@ -123,12 +123,12 @@ export default function RegisterForm() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t("auth.email.placeholder")}
                 value={formData.email}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -136,12 +136,12 @@ export default function RegisterForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="organization">Company / Organization Name</Label>
+              <Label htmlFor="organization">{t("auth.organization")}</Label>
               <Input
                 id="organization"
                 name="organization"
                 type="text"
-                placeholder="Your organization"
+                placeholder={t("auth.organization")}
                 value={formData.organization}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -149,12 +149,12 @@ export default function RegisterForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("auth.username")}</Label>
               <Input
                 id="username"
                 name="username"
                 type="text"
-                placeholder="Choose a username"
+                placeholder={t("auth.username.placeholder")}
                 value={formData.username}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -162,12 +162,12 @@ export default function RegisterForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Min. 12 characters"
+                placeholder={t("auth.register.passwordMinLength")}
                 value={formData.password}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -176,12 +176,14 @@ export default function RegisterForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">
+                {t("auth.confirmPassword")}
+              </Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="Re-enter your password"
+                placeholder={t("auth.password.placeholder")}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -195,23 +197,24 @@ export default function RegisterForm() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isLoading
+                ? t("auth.register.submitting")
+                : t("auth.register.submit")}
             </Button>
             <p className="text-muted-foreground text-center text-xs">
-              By registering, you agree to our{" "}
+              {t("auth.register.terms")}{" "}
               <Link href="/terms" className="text-primary hover:underline">
-                Terms
+                {t("auth.register.termsLink")}
               </Link>{" "}
-              and{" "}
               <Link href="/privacy" className="text-primary hover:underline">
-                Privacy Policy
+                {t("auth.register.privacyLink")}
               </Link>
               .
             </p>
             <p className="text-muted-foreground text-center text-sm">
-              Already have an account?{" "}
+              {t("auth.register.hasAccount")}{" "}
               <Link href="/login" className="text-primary hover:underline">
-                Sign in
+                {t("auth.login.submit")}
               </Link>
             </p>
           </form>

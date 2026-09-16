@@ -16,6 +16,16 @@ import {
 } from "@/components/ui/card";
 import { Info, Shield, Eye, EyeOff } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useI18n } from "@/hooks/useI18n";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { AVAILABLE_LOCALES } from "@/lib/i18n";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TurnstileWidget {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
@@ -108,6 +118,8 @@ export default function LoginPage({
   microsoftEnabled = false,
   googleEnabled = false,
 }: LoginPageProps) {
+  const { t } = useI18n();
+  const { preferences, setLocalLocale } = useUserPreferences();
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
@@ -159,7 +171,7 @@ export default function LoginPage({
       });
 
       if (result?.error) {
-        setError(result.error.message || "Invalid username or password");
+        setError(result.error.message || t("auth.login.invalid"));
         resetTurnstile();
         setIsLoading(false);
       } else if (
@@ -174,7 +186,7 @@ export default function LoginPage({
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("An error occurred during login");
+      setError(t("auth.login.error"));
       resetTurnstile();
       setIsLoading(false);
     }
@@ -198,10 +210,28 @@ export default function LoginPage({
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Asset Tracker</CardTitle>
-          <CardDescription>
-            Enter your credentials to access the system
-          </CardDescription>
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="text-2xl font-bold">{t("app.name")}</CardTitle>
+            <Select
+              value={preferences.locale || "en"}
+              onValueChange={setLocalLocale}
+            >
+              <SelectTrigger
+                className="h-8 w-[7.5rem]"
+                aria-label={t("language.label")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(AVAILABLE_LOCALES).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <CardDescription>{t("auth.login.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {isDemo && (
@@ -209,11 +239,8 @@ export default function LoginPage({
               <div className="flex items-start gap-2">
                 <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                 <div className="text-sm text-amber-800 dark:text-amber-200">
-                  <p className="mb-2 font-medium">Demo Mode</p>
-                  <p className="mb-2">
-                    Data resets every 30 minutes. Use one of the demo accounts
-                    below:
-                  </p>
+                  <p className="mb-2 font-medium">{t("auth.demo.title")}</p>
+                  <p className="mb-2">{t("auth.demo.resetNotice")}</p>
                   <div className="space-y-1">
                     <Button
                       type="button"
@@ -226,7 +253,7 @@ export default function LoginPage({
                       <span className="text-muted-foreground mx-2">/</span>
                       <span className="font-mono">demo123</span>
                       <span className="text-muted-foreground ml-auto">
-                        (Admin)
+                        {t("auth.demo.roleAdmin")}
                       </span>
                     </Button>
                     <Button
@@ -240,7 +267,7 @@ export default function LoginPage({
                       <span className="text-muted-foreground mx-2">/</span>
                       <span className="font-mono">demo123</span>
                       <span className="text-muted-foreground ml-auto">
-                        (User)
+                        {t("auth.demo.roleUser")}
                       </span>
                     </Button>
                   </div>
@@ -250,12 +277,12 @@ export default function LoginPage({
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("auth.username")}</Label>
               <Input
                 id="username"
                 name="username"
                 type="text"
-                placeholder="Enter your username"
+                placeholder={t("auth.username.placeholder")}
                 value={formData.username}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -263,13 +290,13 @@ export default function LoginPage({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("auth.password.placeholder")}
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isLoading}
@@ -281,7 +308,11 @@ export default function LoginPage({
                   variant="ghost"
                   size="sm"
                   tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword
+                      ? t("auth.password.hide")
+                      : t("auth.password.show")
+                  }
                   className="absolute top-0 right-0 h-full px-3"
                   disabled={isLoading}
                   onClick={() => setShowPassword((v) => !v)}
@@ -299,7 +330,7 @@ export default function LoginPage({
                 href="/forgot-password"
                 className="text-primary text-sm hover:underline"
               >
-                Forgot your password?
+                {t("auth.forgotPassword.link")}
               </Link>
             </div>
             {error && (
@@ -311,7 +342,7 @@ export default function LoginPage({
               <div ref={turnstileRef} className="flex justify-center" />
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
           </form>
           {(ssoStatus || microsoftEnabled || googleEnabled) && (
@@ -319,7 +350,7 @@ export default function LoginPage({
               <div className="relative my-4">
                 <Separator />
                 <span className="bg-card text-muted-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2 text-xs">
-                  or
+                  {t("common.or")}
                 </span>
               </div>
               <div className="flex flex-col gap-2">
@@ -344,7 +375,7 @@ export default function LoginPage({
                       <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
                       <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
                     </svg>
-                    Sign in with Microsoft
+                    {t("auth.oauth.microsoft")}
                   </Button>
                 )}
                 {googleEnabled && (
@@ -376,7 +407,7 @@ export default function LoginPage({
                         fill="#EA4335"
                       />
                     </svg>
-                    Sign in with Google
+                    {t("auth.oauth.google")}
                   </Button>
                 )}
                 {ssoStatus && (
@@ -388,7 +419,7 @@ export default function LoginPage({
                     }}
                   >
                     <Shield className="mr-2 h-4 w-4" />
-                    Sign in with {ssoStatus.providerName}
+                    {t("sso.signInWith", { provider: ssoStatus.providerName })}
                   </Button>
                 )}
               </div>

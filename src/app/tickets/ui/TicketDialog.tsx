@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/hooks/useI18n";
 import { TicketDetailPanel, type TicketDetailPanelProps } from "./TicketDetailPanel";
 import type { Ticket } from "@/types/ticket";
 
@@ -20,11 +21,15 @@ export function TicketDialog({
   onOpenChange,
   ...panelProps
 }: TicketDialogProps) {
+  const { t } = useI18n();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:rounded-lg">
         <DialogTitle className="sr-only">
-          {ticket ? `#${ticket.ticketNumber} ${ticket.title}` : "Ticket"}
+          {ticket
+            ? `#${ticket.ticketNumber} ${ticket.title}`
+            : t("ticket.title")}
         </DialogTitle>
         {ticket ? (
           <TicketDetailPanel

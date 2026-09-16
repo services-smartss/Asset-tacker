@@ -14,6 +14,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { AVAILABLE_LOCALES } from "@/lib/i18n";
+import { useI18n } from "@/hooks/useI18n";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 interface UserSettingsClientProps {
   user: {
@@ -39,13 +42,10 @@ const THEMES = [
   { value: "dark", label: "Dark" },
 ];
 
-const LOCALES = [
-  { value: "en", label: "English" },
-  { value: "de", label: "German" },
-  { value: "fr", label: "French" },
-  { value: "es", label: "Spanish" },
-  { value: "nl", label: "Dutch" },
-];
+const LOCALES = Object.entries(AVAILABLE_LOCALES).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const CURRENCIES = [
   { value: "USD", label: "USD ($)" },
@@ -73,6 +73,8 @@ export default function UserSettingsClient({
   preferences,
 }: UserSettingsClientProps) {
   const router = useRouter();
+  const { t } = useI18n();
+  const { updatePreferences } = useUserPreferences();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     theme: preferences.theme,
@@ -88,21 +90,15 @@ export default function UserSettingsClient({
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("/api/user/preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          pageSize: Number(form.pageSize),
-        }),
+      await updatePreferences({
+        ...form,
+        pageSize: Number(form.pageSize),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || "Failed to save settings");
-      }
-      toast.success("Settings saved");
+      toast.success(t("common.savedSuccessfully"));
     } catch (err) {
-      toast.error("Failed to save", { description: (err as Error).message });
+      toast.error(t("common.errorOccurred"), {
+        description: (err as Error).message,
+      });
     } finally {
       setSaving(false);
     }
@@ -168,7 +164,7 @@ export default function UserSettingsClient({
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="locale">Language</Label>
+              <Label htmlFor="locale">{t("language.label")}</Label>
               <Select
                 value={form.locale}
                 onValueChange={(v) => setForm((f) => ({ ...f, locale: v }))}

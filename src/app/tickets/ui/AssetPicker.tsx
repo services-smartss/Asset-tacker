@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 import type { TicketAsset } from "@/types/ticket";
 
 interface AssetPickerProps {
@@ -26,6 +27,7 @@ interface AssetPickerProps {
 }
 
 export function AssetPicker({ value, onChange, disabled }: AssetPickerProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [assets, setAssets] = useState<TicketAsset[]>([]);
@@ -89,7 +91,7 @@ export function AssetPicker({ value, onChange, disabled }: AssetPickerProps) {
                 {value.assettag} — {value.assetname}
               </span>
             ) : (
-              <span className="text-muted-foreground">Select an asset</span>
+              <span className="text-muted-foreground">{t("ticket.item")}</span>
             )}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -97,13 +99,13 @@ export function AssetPicker({ value, onChange, disabled }: AssetPickerProps) {
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search tag or name..."
+              placeholder={t("ticket.searchAsset")}
               value={query}
               onValueChange={setQuery}
             />
             <CommandList>
               <CommandEmpty>
-                {loading ? "Searching..." : "No assets found"}
+                {loading ? t("common.loading") : t("common.noResults")}
               </CommandEmpty>
               <CommandGroup>
                 {assets.map((asset) => (
@@ -139,7 +141,7 @@ export function AssetPicker({ value, onChange, disabled }: AssetPickerProps) {
           variant="ghost"
           size="icon"
           onClick={() => onChange(null)}
-          aria-label="Clear linked asset"
+          aria-label={t("ticket.clearAsset")}
         >
           <X className="h-4 w-4" />
         </Button>

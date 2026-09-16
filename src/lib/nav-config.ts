@@ -39,6 +39,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 export interface NavItem {
+  /** i18n key resolved with t() at render time */
   label: string;
   href: string;
   icon: LucideIcon;
@@ -47,6 +48,7 @@ export interface NavItem {
 }
 
 export interface NavSection {
+  /** i18n key resolved with t() at render time */
   title: string;
   collapsible?: boolean;
   items: NavItem[];
@@ -54,39 +56,39 @@ export interface NavSection {
 
 export const navSections: NavSection[] = [
   {
-    title: "Overview",
+    title: "nav.section.overview",
     items: [
       {
-        label: "Dashboard",
+        label: "nav.dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
         exact: true,
       },
-      { label: "Users", href: "/user", icon: Users, adminOnly: true },
-      { label: "Assets", href: "/assets", icon: Boxes },
-      { label: "Accessories", href: "/accessories", icon: Puzzle },
+      { label: "nav.users", href: "/user", icon: Users, adminOnly: true },
+      { label: "nav.assets", href: "/assets", icon: Boxes },
+      { label: "nav.accessories", href: "/accessories", icon: Puzzle },
     ],
   },
   {
-    title: "Inventory",
+    title: "nav.section.inventory",
     items: [
-      { label: "Consumables", href: "/consumables", icon: ClipboardList },
-      { label: "Components", href: "/components", icon: Cpu, adminOnly: true },
-      { label: "Licences", href: "/licences", icon: BadgeCheck },
+      { label: "nav.consumables", href: "/consumables", icon: ClipboardList },
+      { label: "nav.components", href: "/components", icon: Cpu, adminOnly: true },
+      { label: "nav.licences", href: "/licences", icon: BadgeCheck },
       {
-        label: "Manufacturers",
+        label: "nav.manufacturers",
         href: "/manufacturers",
         icon: Factory,
         adminOnly: true,
       },
       {
-        label: "Suppliers",
+        label: "nav.suppliers",
         href: "/suppliers",
         icon: Truck,
         adminOnly: true,
       },
       {
-        label: "Locations",
+        label: "nav.locations",
         href: "/locations",
         icon: MapPin,
         adminOnly: true,
@@ -94,42 +96,42 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Categories",
+    title: "nav.section.categories",
     collapsible: true,
     items: [
       {
-        label: "Asset Categories",
+        label: "nav.assetCategories",
         href: "/assetCategories",
         icon: Layers,
         adminOnly: true,
       },
       {
-        label: "Accessory Categories",
+        label: "nav.accessoryCategories",
         href: "/accessoryCategories",
         icon: FolderOpen,
         adminOnly: true,
       },
       {
-        label: "Consumable Categories",
+        label: "nav.consumableCategories",
         href: "/consumableCategories",
         icon: FolderCog,
         adminOnly: true,
       },
       {
-        label: "Component Categories",
+        label: "nav.componentCategories",
         href: "/componentCategories",
         icon: Cpu,
         adminOnly: true,
       },
       {
-        label: "Licence Categories",
+        label: "nav.licenceCategories",
         href: "/licenceCategories",
         icon: FolderKey,
         adminOnly: true,
       },
-      { label: "Models", href: "/models", icon: Tags, adminOnly: true },
+      { label: "nav.models", href: "/models", icon: Tags, adminOnly: true },
       {
-        label: "Status Types",
+        label: "nav.statusTypes",
         href: "/statusTypes",
         icon: CircleDot,
         adminOnly: true,
@@ -137,76 +139,76 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Tools",
+    title: "nav.section.tools",
     items: [
-      { label: "Advanced Search", href: "/search", icon: Filter },
-      { label: "Tickets", href: "/tickets", icon: Ticket },
+      { label: "nav.advancedSearch", href: "/search", icon: Filter },
+      { label: "nav.tickets", href: "/tickets", icon: Ticket },
       {
-        label: "Maintenance",
+        label: "nav.maintenance",
         href: "/maintenance",
         icon: Wrench,
         adminOnly: true,
       },
-      { label: "Kits", href: "/kits", icon: Package, adminOnly: true },
-      { label: "Audits", href: "/audits", icon: SearchCheck, adminOnly: true },
-      { label: "Reservations", href: "/reservations", icon: CalendarDays },
+      { label: "nav.kits", href: "/kits", icon: Package, adminOnly: true },
+      { label: "nav.audits", href: "/audits", icon: SearchCheck, adminOnly: true },
+      { label: "nav.reservations", href: "/reservations", icon: CalendarDays },
       {
-        label: "Approvals",
+        label: "nav.approvals",
         href: "/approvals",
         icon: ClipboardCheck,
         adminOnly: true,
       },
       {
-        label: "Procurement",
+        label: "nav.procurement",
         href: "/procurement",
         icon: ShoppingCart,
         adminOnly: true,
       },
-      { label: "QR Scanner", href: "/scanner", icon: QrCode },
-      { label: "Import", href: "/import", icon: Upload, adminOnly: true },
+      { label: "nav.qrScanner", href: "/scanner", icon: QrCode },
+      { label: "nav.import", href: "/import", icon: Upload, adminOnly: true },
       {
-        label: "Duplicates",
+        label: "nav.duplicates",
         href: "/duplicates",
         icon: Copy,
         adminOnly: true,
       },
-      { label: "Help", href: "/help", icon: HelpCircle },
+      { label: "nav.help", href: "/help", icon: HelpCircle },
     ],
   },
   {
-    title: "Administration",
+    title: "nav.section.administration",
     collapsible: true,
     items: [
-      { label: "Reports", href: "/reports", icon: BarChart3, adminOnly: true },
+      { label: "nav.reports", href: "/reports", icon: BarChart3, adminOnly: true },
       {
-        label: "TCO Analysis",
+        label: "nav.tcoAnalysis",
         href: "/tco",
         icon: BarChart3,
         adminOnly: true,
       },
       {
-        label: "Workflows",
+        label: "nav.workflows",
         href: "/admin/workflows",
         icon: Zap,
         adminOnly: true,
       },
-      { label: "API Docs", href: "/api-docs", icon: FileJson, adminOnly: true },
+      { label: "nav.apiDocs", href: "/api-docs", icon: FileJson, adminOnly: true },
       {
-        label: "Audit Logs",
+        label: "nav.auditLogs",
         href: "/admin/audit-logs",
         icon: FileSearch,
         adminOnly: true,
       },
-      { label: "GDPR", href: "/admin/gdpr", icon: Shield, adminOnly: true },
+      { label: "nav.gdpr", href: "/admin/gdpr", icon: Shield, adminOnly: true },
       {
-        label: "Compliance",
+        label: "nav.compliance",
         href: "/admin/compliance",
         icon: ShieldCheck,
         adminOnly: true,
       },
-      { label: "Team", href: "/admin/team", icon: UsersRound, adminOnly: true },
+      { label: "nav.team", href: "/admin/team", icon: UsersRound, adminOnly: true },
       {
-        label: "Admin Settings",
+        label: "nav.adminSettings",
         href: "/admin/settings",
         icon: Settings,
         adminOnly: true,
@@ -217,14 +219,14 @@ export const navSections: NavSection[] = [
 
 export const primaryNavItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     exact: true,
   },
-  { label: "Assets", href: "/assets", icon: Boxes },
-  { label: "Users", href: "/user", icon: Users },
-  { label: "Consumables", href: "/consumables", icon: Package },
+  { label: "nav.assets", href: "/assets", icon: Boxes },
+  { label: "nav.users", href: "/user", icon: Users },
+  { label: "nav.consumables", href: "/consumables", icon: Package },
 ];
 
 export function isActivePath(pathname: string, href: string, exact = false) {

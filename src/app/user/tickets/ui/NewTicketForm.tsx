@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import { AssetPicker } from "@/app/tickets/ui/AssetPicker";
 import {
   TICKET_CATEGORIES,
@@ -34,6 +35,7 @@ export function NewTicketForm({
   onCancel,
   embedded = false,
 }: NewTicketFormProps) {
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState(3);
@@ -43,11 +45,29 @@ export function NewTicketForm({
   const [asset, setAsset] = useState<TicketAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const priorityLabel = (priority: string) => {
+    const key = `ticket.priority.${priority}`;
+    const translated = t(key);
+    return translated === key ? ticketPriorityLabel(priority) : translated;
+  };
+
+  const categoryLabel = (value: string) => {
+    const key = `ticket.category.${value}`;
+    const translated = t(key);
+    return translated === key ? value : translated;
+  };
+
+  const scaleLabel = (value: number) => {
+    const key = `ticket.scale.${value}`;
+    const translated = t(key);
+    return translated === key ? String(value) : translated;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
-      toast.error("Please enter a title");
+      toast.error(t("ticket.titleRequired"));
       return;
     }
 
@@ -75,11 +95,11 @@ export function NewTicketForm({
       }
 
       const newTicket = await response.json();
-      toast.success("Ticket created successfully");
+      toast.success(t("ticket.created"));
       onTicketCreated(newTicket);
     } catch (error) {
       console.error("Error creating ticket", error);
-      toast.error("Failed to create ticket");
+      toast.error(t("ticket.createFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -88,12 +108,12 @@ export function NewTicketForm({
   return (
     <div className={embedded ? undefined : "bg-card rounded-lg border p-6"}>
       {!embedded && (
-        <h2 className="mb-4 text-xl font-semibold">Create New Ticket</h2>
+        <h2 className="mb-4 text-xl font-semibold">{t("ticket.createTitle")}</h2>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{t("ticket.type")}</Label>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger id="type">
                 <SelectValue />
@@ -101,14 +121,14 @@ export function NewTicketForm({
               <SelectContent>
                 {TICKET_TYPES.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+                    {t(`ticket.type.${item.value}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{t("ticket.category")}</Label>
             <Select
               value={category || "none"}
               onValueChange={(value) =>
@@ -116,13 +136,13 @@ export function NewTicketForm({
               }
             >
               <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={t("ticket.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="none">{t("ticket.category.none")}</SelectItem>
                 {TICKET_CATEGORIES.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+                    {categoryLabel(item.value)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -131,35 +151,35 @@ export function NewTicketForm({
         </div>
 
         <div>
-          <Label>Item</Label>
+          <Label>{t("ticket.item")}</Label>
           <AssetPicker value={asset} onChange={setAsset} />
         </div>
 
         <div>
-          <Label htmlFor="title">Title *</Label>
+          <Label htmlFor="title">{t("ticket.titleLabel")}</Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Brief description of the incident or request"
+            placeholder={t("ticket.titlePlaceholder")}
             required
           />
         </div>
 
         <div>
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{t("ticket.descriptionLabel")}</Label>
           <Textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the problem or request..."
+            placeholder={t("ticket.descriptionPlaceholder")}
             rows={4}
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="urgency">Urgency</Label>
+            <Label htmlFor="urgency">{t("ticket.urgency")}</Label>
             <Select
               value={String(urgency)}
               onValueChange={(value) => setUrgency(Number(value))}
@@ -170,14 +190,14 @@ export function NewTicketForm({
               <SelectContent>
                 {TICKET_SCALE.map((item) => (
                   <SelectItem key={item.value} value={String(item.value)}>
-                    {item.label}
+                    {scaleLabel(item.value)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="impact">Impact</Label>
+            <Label htmlFor="impact">{t("ticket.impact")}</Label>
             <Select
               value={String(impact)}
               onValueChange={(value) => setImpact(Number(value))}
@@ -188,7 +208,7 @@ export function NewTicketForm({
               <SelectContent>
                 {TICKET_SCALE.map((item) => (
                   <SelectItem key={item.value} value={String(item.value)}>
-                    {item.label}
+                    {scaleLabel(item.value)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -196,16 +216,17 @@ export function NewTicketForm({
           </div>
         </div>
         <p className="text-muted-foreground text-xs">
-          Priority {ticketPriorityLabel(computePriority(urgency, impact))}{" "}
-          (from urgency × impact)
+          {t("ticket.priorityFromScale", {
+            priority: priorityLabel(computePriority(urgency, impact)),
+          })}
         </p>
 
         <div className="flex gap-3">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Ticket"}
+            {isSubmitting ? t("ticket.creating") : t("ticket.create")}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {t("action.cancel")}
           </Button>
         </div>
       </form>

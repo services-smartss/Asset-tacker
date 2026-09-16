@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import AdminSettingsPage from "./ui/AdminSettingsPage";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import prisma from "@/lib/prisma";
 
 export const metadata = {
@@ -153,8 +154,8 @@ export default async function Page() {
     : null;
 
   const breadcrumbOptions = [
-    { label: "Home", href: "/" },
-    { label: "Admin Settings", href: "/admin/settings" },
+    { label: <I18nText k="breadcrumb.home" />, href: "/" },
+    { label: <I18nText k="nav.adminSettings" />, href: "/admin/settings" },
   ];
 
   return (

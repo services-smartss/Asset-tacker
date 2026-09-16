@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import HelpPage from "./ui/HelpPage";
 
 export const metadata = {
@@ -16,8 +17,8 @@ export default async function Page() {
     <>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Help", href: "/help" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.help" />, href: "/help" },
         ]}
       />
       <HelpPage isAdmin={isAdmin} />

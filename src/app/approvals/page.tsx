@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ApprovalsPageClient from "./ui/ApprovalsPageClient";
 
 export const metadata = {
@@ -17,8 +18,8 @@ export default async function Page() {
   }
 
   const breadcrumbOptions = [
-    { label: "Home", href: "/" },
-    { label: "Approvals", href: "/approvals" },
+    { label: <I18nText k="breadcrumb.home" />, href: "/" },
+    { label: <I18nText k="nav.approvals" />, href: "/approvals" },
   ];
 
   return (

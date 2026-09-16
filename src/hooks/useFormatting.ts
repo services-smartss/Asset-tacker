@@ -9,6 +9,7 @@ const LOCALE_MAP: Record<string, string> = {
   fr: "fr-FR",
   es: "es-ES",
   nl: "nl-NL",
+  th: "th-TH",
 };
 
 const DATE_FORMAT_MAP: Record<string, Intl.DateTimeFormatOptions> = {

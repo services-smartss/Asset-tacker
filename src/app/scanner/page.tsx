@@ -1,4 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ScannerPageClient from "./ui/ScannerPageClient";
 import { getOrganizationContext } from "@/lib/organization-context";
 
@@ -20,8 +21,8 @@ export default async function Page() {
     <>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "QR Scanner", href: "/scanner" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.qrScanner" />, href: "/scanner" },
         ]}
       />
       <ScannerPageClient isAdmin={isAdmin} />

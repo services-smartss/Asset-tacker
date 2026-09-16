@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import { getUsers } from "@/lib/data";
 import { getOrganizationContext } from "@/lib/organization-context";
 import UsersTableClient from "./ui/UsersTableClient";
@@ -42,8 +43,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Users", href: "/user" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.users" />, href: "/user" },
         ]}
       />
       <UsersTableClient data={databaseUsers} columns={columnName} />

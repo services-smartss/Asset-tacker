@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 
 interface ComponentItem {
   id: string;
@@ -38,6 +39,7 @@ export default function ComponentsTable({
   manufacturers: { manufacturerid: string; manufacturername: string }[];
   suppliers: { supplierid: string; suppliername: string }[];
 }) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -71,7 +73,7 @@ export default function ComponentsTable({
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Components</h1>
+          <h1 className="text-2xl font-semibold">{t("page.components.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Track hardware parts like RAM, SSDs, and cables
           </p>

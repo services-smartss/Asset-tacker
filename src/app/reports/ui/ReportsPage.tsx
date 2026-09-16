@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -415,6 +416,7 @@ export default function ReportsPage({
   warrantyAssets,
   depreciationAssets,
 }: ReportsPageProps) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("overview");
 
   const costByCategoryData = useMemo(() => {
@@ -591,7 +593,7 @@ export default function ReportsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Reports & Analytics</h1>
+          <h1 className="text-2xl font-semibold">{t("page.reports.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             View insights and export reports about your assets
           </p>

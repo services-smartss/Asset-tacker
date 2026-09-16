@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -139,6 +140,7 @@ const CHART_COLORS = {
 } as const;
 
 export default function TCODashboard() {
+  const { t } = useI18n();
   const [data, setData] = useState<TCOSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("totalCostOfOwnership");
@@ -232,7 +234,7 @@ export default function TCODashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          TCO Analysis
+          {t("page.tco.title")}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Total Cost of Ownership breakdown across asset categories

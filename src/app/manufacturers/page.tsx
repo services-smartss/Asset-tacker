@@ -1,4 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ManufacturersTable from "../../ui/manufacturers/ManufacturersTable";
 import { getManufacturers } from "@/lib/data";
 
@@ -26,8 +27,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Manufacturers", href: "/manufacturers" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.manufacturers" />, href: "/manufacturers" },
         ]}
       />
       <ManufacturersTable items={manufacturers} />

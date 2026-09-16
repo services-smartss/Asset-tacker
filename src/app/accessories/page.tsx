@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import AccessoriesTable from "../../ui/accessories/AccessoriesTable";
 import {
   getAccessories,
@@ -78,8 +79,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Accessories", href: "/accessories" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.accessories" />, href: "/accessories" },
         ]}
       />
       <Suspense fallback={null}>

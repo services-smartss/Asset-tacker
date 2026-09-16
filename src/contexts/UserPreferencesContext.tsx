@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useSession } from "@/lib/auth-client";
+import { setLocale } from "@/lib/i18n";
 
 export interface UserPreferences {
   theme: string;
@@ -38,11 +39,14 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 interface UserPreferencesContextValue {
   preferences: UserPreferences;
   updatePreferences: (partial: Partial<UserPreferences>) => Promise<void>;
+  /** Update locale locally (and localStorage) without requiring a signed-in user. */
+  setLocalLocale: (locale: string) => void;
 }
 
 const UserPreferencesContext = createContext<UserPreferencesContextValue>({
   preferences: DEFAULT_PREFERENCES,
   updatePreferences: async () => {},
+  setLocalLocale: () => {},
 });
 
 export function UserPreferencesProvider({
@@ -53,6 +57,27 @@ export function UserPreferencesProvider({
   const { data: session, isPending } = useSession();
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("asset-tracker:locale");
+    if (stored) {
+      setPreferences((prev) =>
+        prev.locale === stored ? prev : { ...prev, locale: stored },
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const locale = preferences.locale || "en";
+    setLocale(locale);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = locale === "th" ? "th" : locale;
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("asset-tracker:locale", locale);
+    }
+  }, [preferences.locale]);
 
   useEffect(() => {
     if (isPending || !session?.user) return;
@@ -79,6 +104,12 @@ export function UserPreferencesProvider({
       cancelled = true;
     };
   }, [isPending, session?.user]);
+
+  const setLocalLocale = useCallback((locale: string) => {
+    setPreferences((prev) =>
+      prev.locale === locale ? prev : { ...prev, locale },
+    );
+  }, []);
 
   const updatePreferences = useCallback(
     async (partial: Partial<UserPreferences>) => {
@@ -116,7 +147,9 @@ export function UserPreferencesProvider({
   );
 
   return (
-    <UserPreferencesContext.Provider value={{ preferences, updatePreferences }}>
+    <UserPreferencesContext.Provider
+      value={{ preferences, updatePreferences, setLocalLocale }}
+    >
       {children}
     </UserPreferencesContext.Provider>
   );

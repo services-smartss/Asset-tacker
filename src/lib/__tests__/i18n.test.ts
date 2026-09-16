@@ -16,18 +16,19 @@ beforeEach(() => {
 // 1. AVAILABLE_LOCALES
 // ---------------------------------------------------------------------------
 describe("AVAILABLE_LOCALES", () => {
-  it("contains all 5 locale codes with display names", () => {
+  it("contains all locale codes with display names", () => {
     expect(AVAILABLE_LOCALES).toEqual({
       en: "English",
       de: "Deutsch",
       fr: "Français",
       es: "Español",
       nl: "Nederlands",
+      th: "ไทย",
     });
   });
 
-  it("has exactly 5 entries", () => {
-    expect(Object.keys(AVAILABLE_LOCALES)).toHaveLength(5);
+  it("has exactly 6 entries", () => {
+    expect(Object.keys(AVAILABLE_LOCALES)).toHaveLength(6);
   });
 });
 
@@ -191,6 +192,25 @@ describe("t() Dutch translation", () => {
 
   it("interpolates in Dutch", () => {
     expect(t("greeting", { name: "Luca" })).toBe("Goedendag, Luca");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10b. t() Thai translation
+// ---------------------------------------------------------------------------
+describe("t() Thai translation", () => {
+  beforeEach(() => setLocale("th"));
+
+  it("returns the Thai translation for nav.tickets", () => {
+    expect(t("nav.tickets")).toBe("ทิกเก็ต");
+  });
+
+  it("returns the Thai translation for ticket.send", () => {
+    expect(t("ticket.send")).toBe("ส่ง");
+  });
+
+  it("interpolates in Thai", () => {
+    expect(t("greeting", { name: "Luca" })).toBe("สวัสดี Luca");
   });
 });
 

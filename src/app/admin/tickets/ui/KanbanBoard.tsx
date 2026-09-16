@@ -14,8 +14,14 @@ import { TicketColumn } from "./TicketColumn";
 import { TicketCard } from "./TicketCard";
 import { TicketDialog } from "@/app/tickets/ui/TicketDialog";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import type { Ticket, TicketAdminUser, TicketDepartment } from "@/types/ticket";
-import { TICKET_STATUSES, normalizeTicketStatus, ticketStatusDotStyle } from "@/lib/ticket-ui";
+import {
+  TICKET_STATUSES,
+  normalizeTicketStatus,
+  ticketStatusDotStyle,
+  ticketStatusLabel,
+} from "@/lib/ticket-ui";
 
 interface KanbanBoardProps {
   tickets: Ticket[];
@@ -32,7 +38,14 @@ export default function KanbanBoard({
   departments,
   currentUserId,
 }: KanbanBoardProps) {
+  const { t } = useI18n();
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+
+  const statusLabel = (status: string) => {
+    const key = `ticket.status.${normalizeTicketStatus(status)}`;
+    const translated = t(key);
+    return translated === key ? ticketStatusLabel(status) : translated;
+  };
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -90,11 +103,11 @@ export default function KanbanBoard({
 
       const updatedTicket = await response.json();
       applyTicketChange(updatedTicket);
-      toast.success("Ticket status updated");
+      toast.success(t("ticket.statusUpdated"));
     } catch (error) {
       console.error("Error updating ticket:", error);
       setTickets(initialTickets);
-      toast.error("Failed to update ticket status");
+      toast.error(t("ticket.statusUpdateFailed"));
     }
   };
 
@@ -119,11 +132,11 @@ export default function KanbanBoard({
       applyTicketChange(updatedTicket);
 
       if (!updates.solution && !updates.solutionAction) {
-        toast.success("Ticket updated");
+        toast.success(t("ticket.updated"));
       }
     } catch (error) {
       console.error("Error updating ticket:", error);
-      toast.error("Failed to update ticket");
+      toast.error(t("ticket.updateFailed"));
       throw error;
     }
   };
@@ -170,7 +183,7 @@ export default function KanbanBoard({
             <TicketColumn
               key={status.value}
               id={status.value}
-              label={status.label}
+              label={statusLabel(status.value)}
               color={ticketStatusDotStyle(status.value)}
               tickets={getTicketsByStatus(status.value)}
               onTicketClick={(ticket) => setSelectedId(ticket.id)}

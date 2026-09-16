@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import {
   Loader2,
   CheckCircle,
@@ -115,6 +116,7 @@ interface ApprovalsPageClientProps {
 export default function ApprovalsPageClient({
   isAdmin,
 }: ApprovalsPageClientProps) {
+  const { t } = useI18n();
   const { data: session } = useSession();
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -518,7 +520,7 @@ export default function ApprovalsPageClient({
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold">
           <ClipboardList className="h-6 w-6" />
-          Approval Workflows
+          {t("page.approvals.title")}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Review and manage approval requests

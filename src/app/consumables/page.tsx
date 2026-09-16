@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ConsumablesTable from "../../ui/consumables/ConsumablesTable";
 import {
   getConsumables,
@@ -64,8 +65,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Consumables", href: "/consumables" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.consumables" />, href: "/consumables" },
         ]}
       />
       <Suspense fallback={null}>

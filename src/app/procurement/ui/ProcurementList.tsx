@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import { Loader2, ShoppingCart, Plus, Eye, FileText } from "lucide-react";
 
 interface PurchaseRequestUser {
@@ -153,6 +154,7 @@ function calculateEstimatedTotal(items: PurchaseRequestItem[]): number {
 }
 
 export default function ProcurementList() {
+  const { t } = useI18n();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<StatusFilter>("all");
@@ -198,7 +200,7 @@ export default function ProcurementList() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <ShoppingCart className="h-6 w-6" />
-            Procurement
+            {t("page.procurement.title")}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Manage purchase requests and track orders

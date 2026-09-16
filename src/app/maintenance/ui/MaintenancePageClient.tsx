@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import { Plus, CheckCircle, Trash2, Loader2, Wrench } from "lucide-react";
 
 interface Asset {
@@ -98,6 +99,7 @@ function getStatusInfo(nextDueDate: string): {
 }
 
 export default function MaintenancePageClient() {
+  const { t } = useI18n();
   const [schedules, setSchedules] = useState<MaintenanceSchedule[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -344,7 +346,7 @@ export default function MaintenancePageClient() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Wrench className="text-muted-foreground h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Maintenance Schedules</h1>
+          <h1 className="text-2xl font-semibold">{t("page.maintenance.title")}</h1>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

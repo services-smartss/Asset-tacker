@@ -9,6 +9,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, Search } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 interface FAQItem {
   question: string;
@@ -306,6 +307,7 @@ const FAQ_SECTIONS: FAQSection[] = [
 ];
 
 export default function HelpPage({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredSections = useMemo(() => {
@@ -338,9 +340,9 @@ export default function HelpPage({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="mx-auto max-w-3xl pb-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Help & FAQ</h1>
+        <h1 className="text-2xl font-semibold">{t("page.help.title")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Find answers to common questions about Asset Tracker
+          {t("page.help.subtitle")}
         </p>
       </div>
 
@@ -349,7 +351,7 @@ export default function HelpPage({ isAdmin }: { isAdmin: boolean }) {
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
           type="search"
-          placeholder="Search help topics..."
+          placeholder={t("page.help.searchPlaceholder")}
           className="pl-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -408,15 +410,15 @@ export default function HelpPage({ isAdmin }: { isAdmin: boolean }) {
 
       {/* Footer */}
       <div className="border-default-200 mt-8 rounded-lg border p-4 text-center">
-        <p className="text-sm font-medium">Still need help?</p>
+        <p className="text-sm font-medium">{t("page.help.footer.title")}</p>
         <p className="text-muted-foreground mt-1 text-xs">
-          Create a support ticket and we&apos;ll get back to you.
+          {t("page.help.footer.body")}
         </p>
         <Link
           href="/tickets"
           className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
         >
-          Create Ticket &rarr;
+          {t("page.help.footer.cta")} &rarr;
         </Link>
       </div>
     </div>

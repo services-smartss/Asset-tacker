@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Copy, AlertTriangle, ExternalLink } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 interface DuplicateAsset {
   assetId: string;
@@ -40,6 +41,7 @@ const CONFIDENCE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export default function DuplicatesPage() {
+  const { t } = useI18n();
   const [groups, setGroups] = useState<DuplicateGroup[]>([]);
   const [totalGroups, setTotalGroups] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function DuplicatesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold">Duplicate Detection</h1>
+        <h1 className="text-2xl font-semibold">{t("page.duplicates.title")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Potential duplicate assets identified by serial number similarity,
           name similarity, and matching model + location combinations.

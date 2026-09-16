@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ImportPageClient from "./ui/ImportPageClient";
 
 export const metadata: Metadata = {
@@ -13,8 +14,8 @@ export default function ImportPage() {
     <>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Import", href: "/import" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.import" />, href: "/import" },
         ]}
       />
       <ImportPageClient />

@@ -3,10 +3,12 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Clock, User } from "lucide-react";
 import { Ticket } from "@/types/ticket";
+import { useI18n } from "@/hooks/useI18n";
 import {
   TICKET_CHIP_CLASS,
   TICKET_PRIORITY_STYLES,
   displayTicketAsset,
+  normalizeTicketStatus,
   ticketPriorityLabel,
   ticketStatusLabel,
   ticketStatusStyle,
@@ -18,6 +20,21 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ ticket, onClick }: TicketCardProps) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "th" ? "th-TH" : undefined;
+
+  const statusLabel = (status: string) => {
+    const key = `ticket.status.${normalizeTicketStatus(status)}`;
+    const translated = t(key);
+    return translated === key ? ticketStatusLabel(status) : translated;
+  };
+
+  const priorityLabel = (priority: string) => {
+    const key = `ticket.priority.${priority}`;
+    const translated = t(key);
+    return translated === key ? ticketPriorityLabel(priority) : translated;
+  };
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: ticket.id,
@@ -55,10 +72,10 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}>
-            {ticketStatusLabel(ticket.status)}
+            {statusLabel(ticket.status)}
           </span>
           <span className={`${TICKET_CHIP_CLASS} ${priorityColor}`}>
-            {ticketPriorityLabel(ticket.priority)}
+            {priorityLabel(ticket.priority)}
           </span>
         </div>
       </div>
@@ -80,13 +97,15 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+          <span>
+            {new Date(ticket.createdAt).toLocaleDateString(dateLocale)}
+          </span>
         </div>
       </div>
 
       {ticket.assignee && (
         <div className="mt-2 flex items-center gap-1 text-xs">
-          <span className="text-muted-foreground">Assigned to:</span>
+          <span className="text-muted-foreground">{t("ticket.assignedTo")}</span>
           <span className="font-medium">
             {ticket.assignee.firstname} {ticket.assignee.lastname}
           </span>

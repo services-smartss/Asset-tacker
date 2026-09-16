@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import type {
   Ticket,
   TicketActor,
@@ -38,6 +39,7 @@ import {
   displayUserInitials,
   displayUserName,
   isTimelineRequesterSide,
+  normalizeTicketStatus,
   ticketPriorityLabel,
   ticketSlaState,
   ticketStatusLabel,
@@ -135,6 +137,40 @@ export function TicketDetailPanel({
   onAddComment,
   onTicketChange,
 }: TicketDetailPanelProps) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "th" ? "th-TH" : undefined;
+
+  const statusLabel = (status: string) => {
+    const key = `ticket.status.${normalizeTicketStatus(status)}`;
+    const translated = t(key);
+    return translated === key ? ticketStatusLabel(status) : translated;
+  };
+
+  const priorityLabel = (priority: string) => {
+    const key = `ticket.priority.${priority}`;
+    const translated = t(key);
+    return translated === key ? ticketPriorityLabel(priority) : translated;
+  };
+
+  const typeLabel = (type: string) => {
+    const key = `ticket.type.${type}`;
+    const translated = t(key);
+    return translated === key ? ticketTypeLabel(type) : translated;
+  };
+
+  const scaleLabel = (value: number) => {
+    const key = `ticket.scale.${value}`;
+    const translated = t(key);
+    return translated === key ? String(value) : translated;
+  };
+
+  const categoryLabel = (value: string | null) => {
+    if (!value) return t("ticket.category.none");
+    const key = `ticket.category.${value}`;
+    const translated = t(key);
+    return translated === key ? value : translated;
+  };
+
   const [composer, setComposer] = useState<"follow-up" | "task" | "solution">(
     "follow-up",
   );
@@ -178,7 +214,7 @@ export function TicketDetailPanel({
     try {
       if (composer === "solution") {
         await onUpdate(ticket.id, { solution: message.trim() });
-        toast.success("Solution submitted for approval");
+        toast.success(t("ticket.solutionSubmitted"));
       } else if (composer === "task") {
         const response = await fetch(`/api/tickets/${ticket.id}/tasks`, {
           method: "POST",
@@ -188,14 +224,14 @@ export function TicketDetailPanel({
         if (!response.ok) throw new Error("Failed to add task");
         const task = await response.json();
         onTicketChange?.({ ...ticket, tasks: [...ticket.tasks, task] });
-        toast.success("Task added");
+        toast.success(t("ticket.taskAdded"));
       } else {
         await onAddComment(ticket.id, message.trim());
-        toast.success("Follow-up added");
+        toast.success(t("ticket.followUpAdded"));
       }
       setMessage("");
     } catch {
-      toast.error("Failed to save");
+      toast.error(t("ticket.saveFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -207,7 +243,7 @@ export function TicketDetailPanel({
         assetId: asset?.assetid ?? null,
       } as Partial<Ticket>);
     } catch {
-      toast.error("Failed to update item");
+      toast.error(t("ticket.itemUpdateFailed"));
     }
   };
 
@@ -224,7 +260,7 @@ export function TicketDetailPanel({
       }),
     });
     if (!response.ok) {
-      toast.error("Failed to update actors");
+      toast.error(t("ticket.actorsUpdateFailed"));
       throw new Error("Failed to update actors");
     }
     const updated = (await response.json()) as Ticket;
@@ -239,22 +275,22 @@ export function TicketDetailPanel({
             #{displayTicketNumber(ticket)}
           </p>
           <span className={`${TICKET_CHIP_CLASS} ${typeStyle}`}>
-            {ticketTypeLabel(ticket.type || "incident")}
+            {typeLabel(ticket.type || "incident")}
           </span>
           <span className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}>
-            {ticketStatusLabel(ticket.status)}
+            {statusLabel(ticket.status)}
           </span>
           <span className={`${TICKET_CHIP_CLASS} ${priorityStyle}`}>
-            {ticketPriorityLabel(ticket.priority)}
+            {priorityLabel(ticket.priority)}
           </span>
           {sla === "overdue" && (
             <span className={`${TICKET_CHIP_CLASS} ${TICKET_OVERDUE_CHIP}`}>
-              Overdue
+              {t("ticket.overdue")}
             </span>
           )}
           {sla === "paused" && (
             <span className={`${TICKET_CHIP_CLASS} ${TICKET_SLA_PAUSED_CHIP}`}>
-              SLA paused
+              {t("ticket.slaPaused")}
             </span>
           )}
         </div>
@@ -273,10 +309,11 @@ export function TicketDetailPanel({
                   <ChatBubble
                     key={entry.id}
                     side="requester"
-                    label="Opening"
+                    label={t("ticket.opening")}
                     author={displayUserName(ticket.creator)}
                     date={ticket.createdAt}
-                    body={ticket.description || "No description provided"}
+                    dateLocale={dateLocale}
+                    body={ticket.description || t("ticket.noDescription")}
                   />
                 );
               }
@@ -292,6 +329,7 @@ export function TicketDetailPanel({
                     side={requesterSide ? "requester" : "technician"}
                     author={displayUserName(entry.comment.user)}
                     date={entry.comment.createdAt}
+                    dateLocale={dateLocale}
                     body={entry.comment.comment}
                   />
                 );
@@ -311,9 +349,10 @@ export function TicketDetailPanel({
                 return (
                   <EventCard
                     key={entry.id}
-                    title={`Validation · ${entry.validation.status}`}
+                    title={`${t("ticket.validation")} · ${entry.validation.status}`}
                     author={displayUserName(entry.validation.requester)}
                     date={entry.validation.createdAt}
+                    dateLocale={dateLocale}
                     body={
                       entry.validation.commentValidation ||
                       entry.validation.commentSubmission ||
@@ -347,10 +386,10 @@ export function TicketDetailPanel({
                     onClick={() => setComposer(mode)}
                   >
                     {mode === "follow-up"
-                      ? "Follow-up"
+                      ? t("ticket.followUp")
                       : mode === "task"
-                        ? "Task"
-                        : "Solution"}
+                        ? t("ticket.task")
+                        : t("ticket.solution")}
                   </Button>
                 ))}
               </div>
@@ -358,10 +397,10 @@ export function TicketDetailPanel({
             <Textarea
               placeholder={
                 composer === "solution"
-                  ? "Describe the solution..."
+                  ? t("ticket.describeSolution")
                   : composer === "task"
-                    ? "Describe the task..."
-                    : "Write a message..."
+                    ? t("ticket.describeTask")
+                    : t("ticket.writeMessage")
               }
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -383,23 +422,23 @@ export function TicketDetailPanel({
               }
             >
               {isSubmitting
-                ? "Saving..."
+                ? t("ticket.saving")
                 : composer === "solution"
-                  ? "Submit solution"
+                  ? t("ticket.submitSolution")
                   : composer === "task"
-                    ? "Add task"
-                    : "Send"}
+                    ? t("ticket.addTask")
+                    : t("ticket.send")}
             </Button>
           </div>
         </div>
 
         <aside className="w-full shrink-0 space-y-4 overflow-y-auto border-t px-4 py-4 lg:w-[30%] lg:border-t-0 lg:border-l">
           <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-            Actors
+            {t("ticket.actors")}
           </p>
 
           <ActorGroup
-            label="Requester"
+            label={t("ticket.requester")}
             role="requester"
             ticket={ticket}
             orgUsers={orgUsers}
@@ -409,7 +448,7 @@ export function TicketDetailPanel({
             onSave={saveActors}
           />
           <ActorGroup
-            label="Observer"
+            label={t("ticket.observer")}
             role="observer"
             ticket={ticket}
             orgUsers={orgUsers}
@@ -419,7 +458,7 @@ export function TicketDetailPanel({
             onSave={saveActors}
           />
           <ActorGroup
-            label="Assigned"
+            label={t("ticket.assigned")}
             role="assignee"
             ticket={ticket}
             orgUsers={adminUsers}
@@ -430,7 +469,7 @@ export function TicketDetailPanel({
           />
 
           <div>
-            <Label htmlFor="ticket-urgency">Urgency</Label>
+            <Label htmlFor="ticket-urgency">{t("ticket.urgency")}</Label>
             {isAdmin ? (
               <Select
                 value={String(ticket.urgency ?? 3)}
@@ -444,21 +483,20 @@ export function TicketDetailPanel({
                 <SelectContent>
                   {TICKET_SCALE.map((item) => (
                     <SelectItem key={item.value} value={String(item.value)}>
-                      {item.label}
+                      {scaleLabel(item.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
               <p className="mt-1 text-sm">
-                {TICKET_SCALE.find((item) => item.value === ticket.urgency)
-                  ?.label ?? ticket.urgency}
+                {scaleLabel(ticket.urgency ?? 3)}
               </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="ticket-impact">Impact</Label>
+            <Label htmlFor="ticket-impact">{t("ticket.impact")}</Label>
             {isAdmin ? (
               <Select
                 value={String(ticket.impact ?? 3)}
@@ -472,42 +510,41 @@ export function TicketDetailPanel({
                 <SelectContent>
                   {TICKET_SCALE.map((item) => (
                     <SelectItem key={item.value} value={String(item.value)}>
-                      {item.label}
+                      {scaleLabel(item.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
               <p className="mt-1 text-sm">
-                {TICKET_SCALE.find((item) => item.value === ticket.impact)
-                  ?.label ?? ticket.impact}
+                {scaleLabel(ticket.impact ?? 3)}
               </p>
             )}
           </div>
 
-          <Field label="Priority">
-            <p className="mt-1 text-sm">{ticketPriorityLabel(ticket.priority)}</p>
+          <Field label={t("ticket.priority")}>
+            <p className="mt-1 text-sm">{priorityLabel(ticket.priority)}</p>
           </Field>
 
-          <Field label="SLA">
+          <Field label={t("ticket.sla")}>
             <p className="mt-1 text-xs">
               TTO{" "}
               {ticket.timeToOwn
-                ? new Date(ticket.timeToOwn).toLocaleString()
+                ? new Date(ticket.timeToOwn).toLocaleString(dateLocale)
                 : "—"}
             </p>
             <p className="text-xs">
               TTR{" "}
               {ticket.timeToResolve
-                ? new Date(ticket.timeToResolve).toLocaleString()
+                ? new Date(ticket.timeToResolve).toLocaleString(dateLocale)
                 : "—"}
-              {sla === "paused" ? " · paused" : ""}
-              {sla === "overdue" ? " · overdue" : ""}
+              {sla === "paused" ? ` · ${t("ticket.slaPaused")}` : ""}
+              {sla === "overdue" ? ` · ${t("ticket.overdue")}` : ""}
             </p>
           </Field>
 
           <div>
-            <Label htmlFor="ticket-type">Type</Label>
+            <Label htmlFor="ticket-type">{t("ticket.type")}</Label>
             {isAdmin ? (
               <Select
                 value={ticket.type || "incident"}
@@ -519,20 +556,20 @@ export function TicketDetailPanel({
                 <SelectContent>
                   {TICKET_TYPES.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                      {typeLabel(item.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
               <p className="mt-1 text-sm">
-                {ticketTypeLabel(ticket.type || "incident")}
+                {typeLabel(ticket.type || "incident")}
               </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="ticket-category">Category</Label>
+            <Label htmlFor="ticket-category">{t("ticket.category")}</Label>
             {isAdmin ? (
               <Select
                 value={ticket.category || "none"}
@@ -546,21 +583,21 @@ export function TicketDetailPanel({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t("ticket.category.none")}</SelectItem>
                   {TICKET_CATEGORIES.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                      {categoryLabel(item.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
-              <p className="mt-1 text-sm">{ticket.category || "None"}</p>
+              <p className="mt-1 text-sm">{categoryLabel(ticket.category)}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="ticket-status">Status</Label>
+            <Label htmlFor="ticket-status">{t("ticket.status")}</Label>
             {isAdmin ? (
               <Select
                 value={ticket.status}
@@ -572,18 +609,18 @@ export function TicketDetailPanel({
                 <SelectContent>
                   {TICKET_STATUSES.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
-                      {status.label}
+                      {statusLabel(status.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
-              <p className="mt-1 text-sm">{ticketStatusLabel(ticket.status)}</p>
+              <p className="mt-1 text-sm">{statusLabel(ticket.status)}</p>
             )}
           </div>
 
           <div>
-            <Label>Item</Label>
+            <Label>{t("ticket.item")}</Label>
             {isAdmin ? (
               <div className="mt-1">
                 <AssetPicker value={ticket.asset} onChange={handleAssetChange} />
@@ -596,7 +633,9 @@ export function TicketDetailPanel({
                 {ticket.asset.assettag} — {ticket.asset.assetname}
               </Link>
             ) : (
-              <p className="text-muted-foreground mt-1 text-sm">None</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {t("ticket.category.none")}
+              </p>
             )}
           </div>
 
@@ -605,13 +644,15 @@ export function TicketDetailPanel({
               href={`/assets/${ticket.asset.assetid}`}
               className="text-primary text-xs hover:underline"
             >
-              Open asset
+              {t("ticket.openAsset")}
             </Link>
           )}
 
           {isAdmin && (
             <div>
-              <Label htmlFor="ticket-validation">Request validation</Label>
+              <Label htmlFor="ticket-validation">
+                {t("ticket.requestValidation")}
+              </Label>
               <Select
                 value=""
                 onValueChange={async (targetUserId) => {
@@ -624,15 +665,15 @@ export function TicketDetailPanel({
                     },
                   );
                   if (!response.ok) {
-                    toast.error("Failed to request validation");
+                    toast.error(t("ticket.validationRequestFailed"));
                     return;
                   }
                   onTicketChange?.((await response.json()) as Ticket);
-                  toast.success("Validation requested");
+                  toast.success(t("ticket.validationRequested"));
                 }}
               >
                 <SelectTrigger id="ticket-validation" className="mt-1">
-                  <SelectValue placeholder="Choose approver" />
+                  <SelectValue placeholder={t("ticket.chooseApprover")} />
                 </SelectTrigger>
                 <SelectContent>
                   {orgUsers.map((person) => (
@@ -664,13 +705,13 @@ export function TicketDetailPanel({
                     },
                   );
                   if (!response.ok) {
-                    toast.error("Failed to accept validation");
+                    toast.error(t("ticket.validationAcceptFailed"));
                     return;
                   }
                   onTicketChange?.((await response.json()) as Ticket);
                 }}
               >
-                Accept validation
+                {t("ticket.acceptValidation")}
               </Button>
               <Button
                 size="sm"
@@ -685,13 +726,13 @@ export function TicketDetailPanel({
                     },
                   );
                   if (!response.ok) {
-                    toast.error("Failed to refuse validation");
+                    toast.error(t("ticket.validationRefuseFailed"));
                     return;
                   }
                   onTicketChange?.((await response.json()) as Ticket);
                 }}
               >
-                Refuse
+                {t("ticket.refuse")}
               </Button>
             </div>
           )}
@@ -706,12 +747,14 @@ function ChatBubble({
   label,
   author,
   date,
+  dateLocale,
   body,
 }: {
   side: "requester" | "technician";
   label?: string;
   author: string;
   date: Date | string;
+  dateLocale?: string;
   body: string;
 }) {
   const requester = side === "requester";
@@ -736,7 +779,7 @@ function ChatBubble({
         <div className="flex items-baseline justify-between gap-3">
           <span className="font-medium">{author}</span>
           <time className="shrink-0 text-[11px] text-[#57534e]">
-            {new Date(date).toLocaleString()}
+            {new Date(date).toLocaleString(dateLocale)}
           </time>
         </div>
         <p className="mt-1 whitespace-pre-wrap">{body}</p>
@@ -768,10 +811,14 @@ function TaskCard({
   isAdmin: boolean;
   onTicketChange?: (ticket: Ticket) => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="rounded-lg border border-[#f5d98a] bg-[#FEF3C7] p-3 text-sm text-[#1C1F24]">
       <div className="mb-1 flex items-start justify-between gap-3">
-        <span className="font-medium">Task · {displayUserName(task.creator)}</span>
+        <span className="font-medium">
+          {t("ticket.task")} · {displayUserName(task.creator)}
+        </span>
         {isAdmin ? (
           <Button
             type="button"
@@ -789,7 +836,7 @@ function TaskCard({
                 },
               );
               if (!response.ok) {
-                toast.error("Failed to update task");
+                toast.error(t("ticket.taskUpdateFailed"));
                 return;
               }
               const updated = await response.json();
@@ -801,7 +848,7 @@ function TaskCard({
               });
             }}
           >
-            {task.state === "done" ? "Reopen" : "Done"}
+            {task.state === "done" ? t("ticket.reopen") : t("ticket.done")}
           </Button>
         ) : (
           <span className="text-xs capitalize text-[#57534e]">{task.state}</span>
@@ -823,6 +870,8 @@ function SolutionCard({
   isRequester: boolean;
   onUpdate: TicketDetailPanelProps["onUpdate"];
 }) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "th" ? "th-TH" : undefined;
   const accepted = ticket.solutionStatus === "accepted";
   return (
     <div
@@ -835,7 +884,7 @@ function SolutionCard({
     >
       <div className="mb-1 flex items-center gap-2 font-semibold">
         <CheckCircle2 className="h-4 w-4" />
-        Solution
+        {t("ticket.solution")}
         <span className="text-xs font-medium capitalize">
           ({ticket.solutionStatus})
         </span>
@@ -843,7 +892,9 @@ function SolutionCard({
       <div className="mb-2 flex items-center justify-between text-xs">
         <span>{displayUserName(ticket.solver)}</span>
         <span>
-          {ticket.solvedAt ? new Date(ticket.solvedAt).toLocaleString() : ""}
+          {ticket.solvedAt
+            ? new Date(ticket.solvedAt).toLocaleString(dateLocale)
+            : ""}
         </span>
       </div>
       <p className="whitespace-pre-wrap">{ticket.solution}</p>
@@ -853,14 +904,14 @@ function SolutionCard({
             size="sm"
             onClick={() => onUpdate(ticket.id, { solutionAction: "accept" })}
           >
-            Accept solution
+            {t("ticket.acceptSolution")}
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={() => onUpdate(ticket.id, { solutionAction: "refuse" })}
           >
-            Refuse
+            {t("ticket.refuse")}
           </Button>
         </div>
       )}
@@ -872,11 +923,13 @@ function EventCard({
   title,
   author,
   date,
+  dateLocale,
   body,
 }: {
   title: string;
   author: string;
   date: Date | string;
+  dateLocale?: string;
   body: string;
 }) {
   return (
@@ -886,7 +939,7 @@ function EventCard({
           {title} · {author}
         </span>
         <span className="shrink-0 text-xs text-[#57534e]">
-          {new Date(date).toLocaleString()}
+          {new Date(date).toLocaleString(dateLocale)}
         </span>
       </div>
       <p className="whitespace-pre-wrap">{body}</p>
@@ -913,6 +966,7 @@ function ActorGroup({
   isAdmin: boolean;
   onSave: (actors: TicketActor[]) => Promise<void>;
 }) {
+  const { t } = useI18n();
   const actors = ticket.actors.filter((actor) => actor.role === role);
 
   const addUser = async (userId: string) => {
@@ -954,7 +1008,9 @@ function ActorGroup({
       <p className="text-sm font-medium">{label}</p>
       <div className="mt-1 space-y-1">
         {actors.length === 0 && (
-          <p className="text-muted-foreground text-xs">None</p>
+          <p className="text-muted-foreground text-xs">
+            {t("common.none")}
+          </p>
         )}
         {actors.map((actor) => (
           <div
@@ -964,7 +1020,7 @@ function ActorGroup({
             <span className="min-w-0 truncate">
               {actor.user
                 ? displayUserName(actor.user)
-                : actor.department?.name || "Group"}
+                : actor.department?.name || t("common.group")}
             </span>
             {isAdmin && (
               <Button
@@ -985,7 +1041,7 @@ function ActorGroup({
         <div className="mt-2 space-y-2">
           <Select value="" onValueChange={addUser}>
             <SelectTrigger className="h-8">
-              <SelectValue placeholder="Add user" />
+              <SelectValue placeholder={t("ticket.addUser")} />
             </SelectTrigger>
             <SelectContent>
               {orgUsers.map((person) => (
@@ -998,7 +1054,7 @@ function ActorGroup({
           {allowDepartment && departments.length > 0 && (
             <Select value="" onValueChange={addDepartment}>
               <SelectTrigger className="h-8">
-                <SelectValue placeholder="Add department" />
+                <SelectValue placeholder={t("ticket.addDepartment")} />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((department) => (

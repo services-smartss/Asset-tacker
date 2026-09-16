@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import { getKits } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import KitsTable from "./ui/KitsTable";
@@ -27,12 +28,14 @@ export default async function KitsPage() {
     <div className="space-y-6 p-6">
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Kits", href: "/kits" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.kits" />, href: "/kits" },
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Predefined Kits</h1>
+        <h1 className="text-2xl font-bold">
+          <I18nText k="page.kits.title" />
+        </h1>
         <Button asChild>
           <Link href="/kits/create">Create Kit</Link>
         </Button>

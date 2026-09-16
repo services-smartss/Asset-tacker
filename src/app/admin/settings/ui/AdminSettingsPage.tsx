@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import { useSearchParams } from "next/navigation";
 import {
   Settings,
@@ -221,6 +222,7 @@ export default function AdminSettingsPage({
   orgPlan = "starter",
   isSelfHostedMode = false,
 }: AdminSettingsPageProps) {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "general",
@@ -247,7 +249,7 @@ export default function AdminSettingsPage({
     <div className="flex h-[calc(100vh-6rem)] flex-col">
       {/* Header — fixed, never scrolls */}
       <div className="shrink-0 pb-4">
-        <h1 className="text-2xl font-semibold">Admin Settings</h1>
+        <h1 className="text-2xl font-semibold">{t("page.adminSettings.title")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Configure system settings, manage users, and customize the application
         </p>

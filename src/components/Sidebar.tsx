@@ -48,6 +48,7 @@ import {
 } from "@/lib/nav-config";
 import { cn } from "@/lib/utils";
 import packageJson from "../../package.json";
+import { useI18n } from "@/hooks/useI18n";
 
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -59,6 +60,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
   const { data: session, isPending } = useSession();
   const user = session?.user as SessionUser | undefined;
   const isAdmin = !!user?.isadmin;
+  const { t } = useI18n();
 
   const filteredSections = useMemo(
     () => (isPending ? [] : filterSectionsForUser(navSections, isAdmin)),
@@ -104,7 +106,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
   return (
     <TooltipProvider>
       <nav
-        aria-label="Main navigation"
+        aria-label={t("nav.aria.main")}
         className={cn(
           "border-border bg-muted/40 hidden border-r transition-[width] duration-300 ease-in-out lg:flex lg:flex-col",
           collapsed ? "w-16" : "w-64",
@@ -125,12 +127,12 @@ const Sidebar = ({ initialCollapsed = false }) => {
                     }
                   }}
                   className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-opacity hover:opacity-80"
-                  aria-label="Expand sidebar"
+                  aria-label={t("nav.expandSidebar")}
                 >
                   <Boxes className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Expand sidebar</TooltipContent>
+              <TooltipContent side="right">{t("nav.expandSidebar")}</TooltipContent>
             </Tooltip>
           </div>
         ) : (
@@ -140,9 +142,9 @@ const Sidebar = ({ initialCollapsed = false }) => {
             </div>
             <div className="flex flex-1 items-center justify-between">
               <Link href="/dashboard" className="flex flex-col leading-tight">
-                <span className="text-sm font-semibold">Asset Tracker</span>
+                <span className="text-sm font-semibold">{t("app.name")}</span>
                 <span className="text-muted-foreground text-[10px]">
-                  {isAdmin ? "Admin" : "Workspace"}
+                  {isAdmin ? t("nav.context.admin") : t("nav.context.workspace")}
                 </span>
               </Link>
               <Button
@@ -161,7 +163,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
                     return next;
                   });
                 }}
-                aria-label="Collapse sidebar"
+                aria-label={t("nav.collapseSidebar")}
                 className="h-7 w-7 p-0"
               >
                 <PanelLeftClose className="h-4 w-4" />
@@ -206,7 +208,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
                     >
                       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {!collapsed && (
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{t(item.label)}</span>
                       )}
                     </Link>
                   );
@@ -216,7 +218,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
                       <Tooltip key={item.href}>
                         <TooltipTrigger asChild>{content}</TooltipTrigger>
                         <TooltipContent side="right">
-                          <p>{item.label}</p>
+                          <p>{t(item.label)}</p>
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -237,7 +239,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
                   className="mb-2"
                 >
                   <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between px-2.5 py-1.5 text-xs font-medium tracking-wider uppercase transition-colors">
-                    {section.title}
+                    {t(section.title)}
                     <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
                   </CollapsibleTrigger>
                   <CollapsibleContent>{renderItems()}</CollapsibleContent>
@@ -249,7 +251,7 @@ const Sidebar = ({ initialCollapsed = false }) => {
               <div key={section.title} className="mb-2">
                 {!collapsed && (
                   <p className="text-muted-foreground px-2.5 py-1.5 text-xs font-medium tracking-wider uppercase">
-                    {section.title}
+                    {t(section.title)}
                   </p>
                 )}
                 {renderItems()}
@@ -270,45 +272,45 @@ const Sidebar = ({ initialCollapsed = false }) => {
                   <SidebarPlusIcon
                     className={collapsed ? "h-4 w-4" : "mr-2 h-4 w-4"}
                   />
-                  {!collapsed && "Quick Create"}
+                  {!collapsed && t("nav.quickCreate")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link href="/assets/create">
                     <Boxes className="mr-2 h-4 w-4" />
-                    New Asset
+                    {t("nav.create.asset")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/accessories/create">
                     <Puzzle className="mr-2 h-4 w-4" />
-                    New Accessory
+                    {t("nav.create.accessory")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/consumables/create">
                     <ClipboardList className="mr-2 h-4 w-4" />
-                    New Consumable
+                    {t("nav.create.consumable")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/licences/create">
                     <BadgeCheck className="mr-2 h-4 w-4" />
-                    New Licence
+                    {t("nav.create.licence")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/user/create">
                     <User className="mr-2 h-4 w-4" />
-                    New User
+                    {t("nav.create.user")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/locations/create">
                     <MapPin className="mr-2 h-4 w-4" />
-                    New Location
+                    {t("nav.create.location")}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -363,25 +365,25 @@ const Sidebar = ({ initialCollapsed = false }) => {
               <DropdownMenuItem asChild>
                 <Link href={`/user/${user?.id}/settings`}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  {t("nav.settings")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={`/user/${user?.id}`}>
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  {t("nav.profile")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/tickets">
                   <Bell className="mr-2 h-4 w-4" />
-                  Tickets
+                  {t("nav.tickets")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {t("auth.logout")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

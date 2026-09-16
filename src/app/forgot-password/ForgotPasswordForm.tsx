@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Mail } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function ForgotPasswordForm() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -35,9 +37,11 @@ export default function ForgotPasswordForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {t("auth.forgotPassword.title")}
+          </CardTitle>
           <CardDescription>
-            Enter your email address and we&apos;ll send you a reset link
+            {t("auth.forgotPassword.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -46,27 +50,27 @@ export default function ForgotPasswordForm() {
               <div className="rounded-md bg-primary/10 p-4 text-center">
                 <Mail className="h-8 w-8 mx-auto mb-2 text-primary" />
                 <p className="text-sm text-foreground">
-                  If an account with that email exists, we&apos;ve sent a password reset link.
+                  {t("auth.forgotPassword.success")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Check your email and follow the link to reset your password.
+                  {t("auth.forgotPassword.checkEmail")}
                 </p>
               </div>
               <Link href="/login">
                 <Button variant="outline" className="w-full">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Login
+                  {t("auth.backToLogin")}
                 </Button>
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("auth.email.placeholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -74,14 +78,16 @@ export default function ForgotPasswordForm() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading
+                  ? t("auth.forgotPassword.submitting")
+                  : t("auth.forgotPassword.submit")}
               </Button>
               <div className="text-center">
                 <Link
                   href="/login"
                   className="text-sm text-primary hover:underline"
                 >
-                  Back to Login
+                  {t("auth.backToLogin")}
                 </Link>
               </div>
             </form>

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import { NewTicketForm } from "@/app/user/tickets/ui/NewTicketForm";
 import { TicketDialog } from "./TicketDialog";
 import type { Ticket as TicketRecord, TicketAdminUser, TicketDepartment } from "@/types/ticket";
@@ -39,6 +40,7 @@ import {
   displayTicketAsset,
   displayTicketNumber,
   filterInboxTickets,
+  normalizeTicketStatus,
   ticketActorNames,
   ticketPriorityLabel,
   ticketSlaState,
@@ -46,6 +48,13 @@ import {
   ticketStatusStyle,
   type TicketQueue,
 } from "@/lib/ticket-ui";
+
+const TICKET_QUEUE_I18N: Record<TicketQueue, string> = {
+  all: "ticket.queue.all",
+  open: "ticket.queue.open",
+  unassigned: "ticket.queue.unassigned",
+  mine: "ticket.queue.mine",
+};
 
 interface TicketsPageClientProps {
   tickets: TicketRecord[];
@@ -66,7 +75,21 @@ export default function TicketsPageClient({
   orgUsers,
   departments,
 }: TicketsPageClientProps) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "th" ? "th-TH" : undefined;
   const [tickets, setTickets] = useState<TicketRecord[]>(initialTickets);
+
+  const statusLabel = (status: string) => {
+    const key = `ticket.status.${normalizeTicketStatus(status)}`;
+    const translated = t(key);
+    return translated === key ? ticketStatusLabel(status) : translated;
+  };
+
+  const priorityLabel = (priority: string) => {
+    const key = `ticket.priority.${priority}`;
+    const translated = t(key);
+    return translated === key ? ticketPriorityLabel(priority) : translated;
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
   const [queue, setQueue] = useState<TicketQueue>("all");
@@ -141,20 +164,20 @@ export default function TicketsPageClient({
     });
 
     if (!response.ok) {
-      toast.error("Failed to update ticket");
+      toast.error(t("ticket.updateFailed"));
       throw new Error("Failed to update ticket");
     }
 
     const updatedTicket = (await response.json()) as TicketRecord;
     applyTicketChange(updatedTicket);
     if (!updates.solution && !updates.solutionAction) {
-      toast.success("Ticket updated");
+      toast.success(t("ticket.updated"));
     }
     if (updates.solutionAction === "accept") {
-      toast.success("Solution accepted");
+      toast.success(t("ticket.solutionAccepted"));
     }
     if (updates.solutionAction === "refuse") {
-      toast.success("Solution refused");
+      toast.success(t("ticket.solutionRefused"));
     }
   };
 
@@ -199,9 +222,9 @@ export default function TicketsPageClient({
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("ticket.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Open, assign, and reply to support requests in one inbox
+            {t("ticket.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -209,27 +232,20 @@ export default function TicketsPageClient({
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/tickets">
                 <Kanban className="h-4 w-4" />
-                <span className="ml-2">Board</span>
+                <span className="ml-2">{t("nav.board")}</span>
               </Link>
             </Button>
           )}
           <Button size="sm" onClick={() => setShowNewTicketForm(true)}>
             <Plus className="h-4 w-4" />
-            <span className="ml-2">New Ticket</span>
+            <span className="ml-2">{t("ticket.new")}</span>
           </Button>
         </div>
       </div>
 
       {isAdmin && (
         <div className="flex flex-wrap gap-2">
-          {(
-            [
-              ["all", "All"],
-              ["open", "Open"],
-              ["unassigned", "Unassigned"],
-              ["mine", "Assigned to me"],
-            ] as const
-          ).map(([value, label]) => (
+          {(Object.keys(TICKET_QUEUE_I18N) as TicketQueue[]).map((value) => (
             <Button
               key={value}
               type="button"
@@ -237,7 +253,7 @@ export default function TicketsPageClient({
               variant={queue === value ? "default" : "outline"}
               onClick={() => setQueue(value)}
             >
-              {label}
+              {t(TICKET_QUEUE_I18N[value])}
             </Button>
           ))}
         </div>
@@ -247,7 +263,7 @@ export default function TicketsPageClient({
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
-            placeholder="Search tickets..."
+            placeholder={t("ticket.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -255,14 +271,17 @@ export default function TicketsPageClient({
         </div>
         <div className="flex flex-wrap gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger
+              className="w-[150px]"
+              aria-label={t("ticket.col.status")}
+            >
+              <SelectValue placeholder={t("ticket.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">{t("ticket.filter.allStatus")}</SelectItem>
               {TICKET_STATUSES.map((status) => (
                 <SelectItem key={status.value} value={status.value}>
-                  {status.label}
+                  {statusLabel(status.value)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -270,15 +289,15 @@ export default function TicketsPageClient({
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
             <SelectTrigger
               className="w-[150px]"
-              aria-label="Filter by priority"
+              aria-label={t("ticket.col.priority")}
             >
-              <SelectValue placeholder="Priority" />
+              <SelectValue placeholder={t("ticket.priority")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="all">{t("ticket.filter.allPriority")}</SelectItem>
               {TICKET_PRIORITIES.map((priority) => (
                 <SelectItem key={priority.value} value={priority.value}>
-                  {priority.label}
+                  {priorityLabel(priority.value)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -290,17 +309,17 @@ export default function TicketsPageClient({
         {filteredTickets.length === 0 ? (
           <EmptyState
             icon={<Ticket className="h-10 w-10" />}
-            title="No tickets found"
+            title={t("ticket.emptyTitle")}
             description={
               tickets.length === 0
-                ? "Create a ticket to start the helpdesk queue."
-                : "Try a different queue or filter."
+                ? t("ticket.emptyDescription")
+                : t("ticket.emptyFiltered")
             }
             action={
               tickets.length === 0 ? (
                 <Button size="sm" onClick={() => setShowNewTicketForm(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  New Ticket
+                  {t("ticket.new")}
                 </Button>
               ) : undefined
             }
@@ -309,15 +328,15 @@ export default function TicketsPageClient({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead>Requester</TableHead>
-                <TableHead>Assigned</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>TTR</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead className="w-16">{t("ticket.col.id")}</TableHead>
+                <TableHead>{t("ticket.col.title")}</TableHead>
+                <TableHead>{t("ticket.col.item")}</TableHead>
+                <TableHead>{t("ticket.col.requester")}</TableHead>
+                <TableHead>{t("ticket.col.assigned")}</TableHead>
+                <TableHead>{t("ticket.col.status")}</TableHead>
+                <TableHead>{t("ticket.col.priority")}</TableHead>
+                <TableHead>{t("ticket.col.ttr")}</TableHead>
+                <TableHead>{t("ticket.col.updated")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -327,7 +346,9 @@ export default function TicketsPageClient({
                   <TableRow
                     key={ticket.id}
                     tabIndex={0}
-                    aria-label={`Open ticket ${displayTicketNumber(ticket)}`}
+                    aria-label={t("ticket.openTicket", {
+                      id: displayTicketNumber(ticket),
+                    })}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(ticket.id)}
                     onKeyDown={(event) => {
@@ -356,29 +377,29 @@ export default function TicketsPageClient({
                       <span
                         className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}
                       >
-                        {ticketStatusLabel(ticket.status)}
+                        {statusLabel(ticket.status)}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span
                         className={`${TICKET_CHIP_CLASS} ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
                       >
-                        {ticketPriorityLabel(ticket.priority)}
+                        {priorityLabel(ticket.priority)}
                       </span>
                     </TableCell>
                     <TableCell>
                       {sla === "overdue" ? (
                         <span className={`${TICKET_CHIP_CLASS} ${TICKET_OVERDUE_CHIP}`}>
-                          Overdue
+                          {t("ticket.overdue")}
                         </span>
                       ) : ticket.timeToResolve ? (
-                        new Date(ticket.timeToResolve).toLocaleDateString()
+                        new Date(ticket.timeToResolve).toLocaleDateString(dateLocale)
                       ) : (
                         "—"
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
-                      {new Date(ticket.updatedAt).toLocaleString()}
+                      {new Date(ticket.updatedAt).toLocaleString(dateLocale)}
                     </TableCell>
                   </TableRow>
                 );
@@ -390,7 +411,7 @@ export default function TicketsPageClient({
 
       <Dialog open={showNewTicketForm} onOpenChange={setShowNewTicketForm}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-          <DialogTitle>New Ticket</DialogTitle>
+          <DialogTitle>{t("ticket.new")}</DialogTitle>
           <NewTicketForm
             embedded
             onTicketCreated={handleTicketCreated}

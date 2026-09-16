@@ -21,6 +21,7 @@ import {
   isActivePath,
   filterSectionsForUser,
 } from "@/lib/nav-config";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -28,6 +29,7 @@ export default function MobileNav() {
   const { data: session, isPending } = useSession();
   const user = session?.user as SessionUser | undefined;
   const isAdmin = !!user?.isadmin;
+  const { t } = useI18n();
 
   const filteredSections = useMemo(
     () => (isPending ? [] : filterSectionsForUser(navSections, isAdmin)),
@@ -37,7 +39,7 @@ export default function MobileNav() {
   return (
     <nav
       className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 pb-safe fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur md:hidden"
-      aria-label="Mobile navigation"
+      aria-label={t("nav.aria.mobile")}
     >
       <div className="flex items-center justify-around px-1">
         {primaryNavItems.map((item) => {
@@ -56,12 +58,11 @@ export default function MobileNav() {
               )}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </Link>
           );
         })}
 
-        {/* Scan button */}
         <Link
           href="/scanner"
           aria-current={isActivePath(pathname, "/scanner") ? "page" : undefined}
@@ -73,7 +74,7 @@ export default function MobileNav() {
           )}
         >
           <ScanLine className="h-5 w-5" aria-hidden="true" />
-          <span>Scan</span>
+          <span>{t("nav.scan")}</span>
         </Link>
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -81,10 +82,10 @@ export default function MobileNav() {
             <Button
               variant="ghost"
               className="text-muted-foreground hover:text-foreground touch-target flex h-auto flex-col items-center justify-center gap-0.5 rounded-none px-2 py-2 text-[10px] font-medium transition-colors hover:bg-transparent"
-              aria-label="Open full navigation menu"
+              aria-label={t("nav.aria.openMenu")}
             >
               <Menu className="h-5 w-5" />
-              <span>More</span>
+              <span>{t("nav.more")}</span>
             </Button>
           </SheetTrigger>
           <SheetContent
@@ -92,13 +93,13 @@ export default function MobileNav() {
             className="w-[280px] overflow-y-auto p-0 pb-16"
           >
             <SheetHeader className="px-4 pt-4 pb-2">
-              <SheetTitle>Asset Tracker</SheetTitle>
+              <SheetTitle>{t("app.name")}</SheetTitle>
             </SheetHeader>
             <div className="px-2 py-2">
               {filteredSections.map((section) => (
                 <div key={section.title} className="mb-4">
                   <p className="text-muted-foreground px-3 pb-1.5 text-xs font-semibold tracking-wide uppercase">
-                    {section.title}
+                    {t(section.title)}
                   </p>
                   <div className="space-y-0.5">
                     {section.items.map((item) => {
@@ -122,7 +123,7 @@ export default function MobileNav() {
                           )}
                         >
                           <Icon className="h-5 w-5 shrink-0" />
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate">{t(item.label)}</span>
                         </Link>
                       );
                     })}
@@ -136,7 +137,7 @@ export default function MobileNav() {
                 <Separator className="mx-3" />
                 <div className="px-2 py-3">
                   <p className="text-muted-foreground px-3 pb-2 text-xs font-semibold tracking-wide uppercase">
-                    Account
+                    {t("nav.section.account")}
                   </p>
                   <div className="mb-2 px-3">
                     <p className="text-sm font-medium">
@@ -153,7 +154,7 @@ export default function MobileNav() {
                       className="touch-target text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
                     >
                       <Settings className="h-5 w-5 shrink-0" />
-                      Settings
+                      {t("nav.settings")}
                     </Link>
                     <Link
                       href={`/user/${user.id}/edit`}
@@ -161,7 +162,7 @@ export default function MobileNav() {
                       className="touch-target text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
                     >
                       <UserPen className="h-5 w-5 shrink-0" />
-                      Edit Profile
+                      {t("nav.editProfile")}
                     </Link>
                     <button
                       onClick={() => {
@@ -171,7 +172,7 @@ export default function MobileNav() {
                       className="touch-target text-destructive hover:bg-destructive/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
                     >
                       <LogOut className="h-5 w-5 shrink-0" />
-                      Sign Out
+                      {t("auth.signOut")}
                     </button>
                   </div>
                 </div>

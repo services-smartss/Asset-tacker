@@ -1,4 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import ModelsTable from "../../ui/models/ModelsTable";
 import { getModel } from "@/lib/data";
 
@@ -16,8 +17,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Models", href: "/models" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.models" />, href: "/models" },
         ]}
       />
       <ModelsTable items={models} />

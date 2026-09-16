@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import prisma from "@/lib/prisma";
 import ReservationsCalendarClient from "./ReservationsCalendarClient";
 import MyItemRequestsClient from "./MyItemRequestsClient";
@@ -52,11 +53,13 @@ export default async function ReservationsPage() {
     <div className="space-y-6 p-6">
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Reservations", href: "/reservations" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.reservations" />, href: "/reservations" },
         ]}
       />
-      <h1 className="text-2xl font-bold">Reservations</h1>
+      <h1 className="text-2xl font-bold">
+        <I18nText k="page.reservations.title" />
+      </h1>
       <ReservationsCalendarClient reservations={serialized} />
       {!isAdmin && <MyItemRequestsClient />}
     </div>

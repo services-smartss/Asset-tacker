@@ -1,4 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import AssetsTableClient from "./ui/AssetsTableClient";
 import {
   getAssets,
@@ -129,8 +130,8 @@ export default async function Page() {
     <div>
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Assets", href: "/assets" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.assets" />, href: "/assets" },
         ]}
       />
       <AssetsTableClient

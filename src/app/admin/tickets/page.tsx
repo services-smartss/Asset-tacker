@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import KanbanBoard from "./ui/KanbanBoard";
 import prisma from "@/lib/prisma";
 import { mapTicket, ticketInclude } from "@/lib/ticket-query";
@@ -72,13 +73,15 @@ export default async function TicketsPage() {
     <div className="container mx-auto px-4 py-8">
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Admin", href: "/admin" },
-          { label: "Tickets" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="breadcrumb.admin" />, href: "/admin" },
+          { label: <I18nText k="nav.tickets" /> },
         ]}
       />
       <div className="mt-6">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Board</h1>
+        <h1 className="mb-6 text-2xl font-semibold tracking-tight">
+          <I18nText k="page.board.title" />
+        </h1>
         <KanbanBoard
           tickets={tickets}
           adminUsers={adminUsers}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { useI18n } from "@/hooks/useI18n";
 import { TicketCard } from "./TicketCard";
 import { Ticket } from "@/types/ticket";
 
@@ -13,6 +14,7 @@ interface TicketColumnProps {
 }
 
 export function TicketColumn({ id, label, color, tickets, onTicketClick }: TicketColumnProps) {
+  const { t } = useI18n();
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -42,7 +44,9 @@ export function TicketColumn({ id, label, color, tickets, onTicketClick }: Ticke
         ))}
         {tickets.length === 0 && (
           <div className="flex items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 p-8 text-center">
-            <p className="text-sm text-muted-foreground">No tickets</p>
+            <p className="text-sm text-muted-foreground">
+              {t("ticket.noTicketsInColumn")}
+            </p>
           </div>
         )}
       </div>

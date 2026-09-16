@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
 import jsQR from "jsqr";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface ScannerPageClientProps {
 export default function ScannerPageClient({
   isAdmin = true,
 }: ScannerPageClientProps) {
+  const { t } = useI18n();
   const router = useRouter();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -270,7 +272,7 @@ export default function ScannerPageClient({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">QR Code Scanner</h1>
+        <h1 className="text-2xl font-semibold">{t("page.scanner.title")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {isAdmin
             ? "Scan asset QR codes or generate new ones"

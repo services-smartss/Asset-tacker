@@ -7,6 +7,8 @@ import {
   getStatus,
 } from "@/lib/data";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
+import { DashboardAdminSubtitle } from "@/components/dashboard/DashboardAdminSubtitle";
 import AssetStatusChart from "@/components/charts/AssetStatusChart";
 import DismissibleHelpTip from "@/components/DismissibleHelpTip";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
@@ -42,11 +44,19 @@ export default async function DashboardPage() {
     return (
       <main className="mx-auto w-full max-w-6xl">
         <Breadcrumb
-          options={[{ label: "Dashboard", href: "/dashboard", current: true }]}
+          options={[
+            {
+              label: <I18nText k="nav.dashboard" />,
+              href: "/dashboard",
+              current: true,
+            },
+          ]}
         />
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          <I18nText k="page.dashboard.title" />
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Your assets, requests, and tickets
+          <I18nText k="page.dashboard.subtitle.user" />
         </p>
         <div className="mt-6">
           <DashboardGrid isAdmin={false} />
@@ -152,9 +162,6 @@ export default async function DashboardPage() {
     });
   });
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const userName = ctx?.userId
     ? (await import("@/lib/prisma")).default.user
         .findUnique({
@@ -171,15 +178,16 @@ export default async function DashboardPage() {
     <main className="mx-auto w-full max-w-6xl">
       <Breadcrumb
         options={[
-          { label: "Home", href: "/" },
-          { label: "Dashboard", href: "/dashboard" },
+          { label: <I18nText k="breadcrumb.home" />, href: "/" },
+          { label: <I18nText k="nav.dashboard" />, href: "/dashboard" },
         ]}
       />
       <header className="mt-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          <I18nText k="page.dashboard.title" />
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          {greeting}
-          {firstName ? `, ${firstName}` : ""}. Fleet counts and what to do next.
+          <DashboardAdminSubtitle firstName={firstName} />
         </p>
       </header>
       <DismissibleHelpTip id="dashboard-welcome">

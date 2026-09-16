@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import ReportsPage from "./ui/ReportsPage";
 import Breadcrumb from "@/components/Breadcrumb";
+import { I18nText } from "@/components/I18nText";
 import prisma from "@/lib/prisma";
 import { calculateDepreciation, DepreciationMethod } from "@/lib/depreciation";
 
@@ -219,8 +220,8 @@ export default async function Page() {
   const reportData = await getReportData();
 
   const breadcrumbOptions = [
-    { label: "Home", href: "/" },
-    { label: "Reports", href: "/reports" },
+    { label: <I18nText k="breadcrumb.home" />, href: "/" },
+    { label: <I18nText k="nav.reports" />, href: "/reports" },
   ];
 
   return (

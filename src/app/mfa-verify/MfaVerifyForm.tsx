@@ -13,8 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function MfaVerifyForm() {
+  const { t } = useI18n();
   const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -34,11 +36,7 @@ export default function MfaVerifyForm() {
       const result = await verifyFn({ code: code.trim() });
 
       if (result?.error) {
-        setError(
-          useBackupCode
-            ? "Invalid backup code. Please try again."
-            : "Invalid verification code. Please try again.",
-        );
+        setError(t("auth.login.invalid"));
         setIsLoading(false);
       } else {
         // MFA verified — redirect to home
@@ -47,7 +45,7 @@ export default function MfaVerifyForm() {
       }
     } catch (err) {
       console.error("MFA verification error:", err);
-      setError("An error occurred during verification");
+      setError(t("auth.login.error"));
       setIsLoading(false);
     }
   };
@@ -57,24 +55,26 @@ export default function MfaVerifyForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
-            Two-Factor Authentication
+            {t("auth.mfa.title")}
           </CardTitle>
           <CardDescription>
             {useBackupCode
-              ? "Enter one of your backup codes to continue"
-              : "Enter the 6-digit code from your authenticator app"}
+              ? t("auth.forgotPassword.checkEmail")
+              : t("auth.login.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="code">
-                {useBackupCode ? "Backup Code" : "Verification Code"}
-              </Label>
+              <Label htmlFor="code">{t("auth.mfa.verify")}</Label>
               <Input
                 id="code"
                 type="text"
-                placeholder={useBackupCode ? "Enter backup code" : "000000"}
+                placeholder={
+                  useBackupCode
+                    ? t("auth.username.placeholder")
+                    : t("auth.password.placeholder")
+                }
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 disabled={isLoading}
@@ -82,7 +82,6 @@ export default function MfaVerifyForm() {
                 inputMode={useBackupCode ? "text" : "numeric"}
                 maxLength={useBackupCode ? 20 : 6}
                 required
-                 
                 autoFocus
               />
             </div>
@@ -94,7 +93,7 @@ export default function MfaVerifyForm() {
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Verifying..." : "Verify"}
+              {isLoading ? t("auth.login.submitting") : t("auth.mfa.verify")}
             </Button>
 
             <div className="text-center">
@@ -109,8 +108,8 @@ export default function MfaVerifyForm() {
                 }}
               >
                 {useBackupCode
-                  ? "Use authenticator app instead"
-                  : "Use a backup code instead"}
+                  ? t("auth.login.submit")
+                  : t("common.tryAgain")}
               </Button>
             </div>
           </form>

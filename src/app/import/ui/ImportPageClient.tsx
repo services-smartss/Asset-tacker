@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -261,6 +262,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function ImportPageClient() {
+  const { t } = useI18n();
   const [entityType, setEntityType] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -444,7 +446,7 @@ export default function ImportPageClient() {
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">Bulk Import</h1>
+      <h1 className="text-2xl font-semibold">{t("page.import.title")}</h1>
 
       <Card>
         <CardHeader>

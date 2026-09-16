@@ -16,6 +16,7 @@ import de from "./locales/de";
 import fr from "./locales/fr";
 import es from "./locales/es";
 import nl from "./locales/nl";
+import th from "./locales/th";
 
 type Translations = Record<string, string>;
 
@@ -25,6 +26,7 @@ const translationStore: Record<string, Translations> = {
   fr,
   es,
   nl,
+  th,
 };
 
 /** Available locale codes and their display names */
@@ -34,6 +36,7 @@ export const AVAILABLE_LOCALES = {
   fr: "Fran\u00e7ais",
   es: "Espa\u00f1ol",
   nl: "Nederlands",
+  th: "\u0e44\u0e17\u0e22",
 } as const;
 
 export type LocaleCode = keyof typeof AVAILABLE_LOCALES;
