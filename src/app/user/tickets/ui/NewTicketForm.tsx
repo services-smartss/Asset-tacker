@@ -26,9 +26,14 @@ import type { Ticket, TicketAsset } from "@/types/ticket";
 interface NewTicketFormProps {
   onTicketCreated: (ticket: Ticket) => void;
   onCancel: () => void;
+  embedded?: boolean;
 }
 
-export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps) {
+export function NewTicketForm({
+  onTicketCreated,
+  onCancel,
+  embedded = false,
+}: NewTicketFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState(3);
@@ -81,8 +86,10 @@ export function NewTicketForm({ onTicketCreated, onCancel }: NewTicketFormProps)
   };
 
   return (
-    <div className="bg-card rounded-lg border p-6">
-      <h2 className="mb-4 text-xl font-semibold">Create New Ticket</h2>
+    <div className={embedded ? undefined : "bg-card rounded-lg border p-6"}>
+      {!embedded && (
+        <h2 className="mb-4 text-xl font-semibold">Create New Ticket</h2>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

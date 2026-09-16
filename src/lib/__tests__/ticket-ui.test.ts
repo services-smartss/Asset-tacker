@@ -5,10 +5,13 @@ import {
   computePriorityLevel,
   displayTicketAsset,
   displayTicketNumber,
+  displayUserInitials,
   displayUserName,
   filterInboxTickets,
   isTicketAssignedToUser,
+  isTimelineRequesterSide,
   shortTicketId,
+  ticketActorNames,
   ticketStatusLabel,
   ticketTypeLabel,
 } from "../ticket-ui";
@@ -214,5 +217,43 @@ describe("ticket-ui", () => {
         currentDepartmentId: "dept-it",
       }),
     ).toHaveLength(0);
+  });
+
+  it("places requester follow-ups on the user side of the timeline", () => {
+    const ticket = {
+      createdBy: "user-1",
+      actors: [
+        { role: "requester", userId: "user-1" },
+        { role: "observer", userId: "observer-1" },
+        { role: "assignee", userId: adminId },
+      ],
+    };
+    expect(isTimelineRequesterSide(ticket, "user-1", [adminId])).toBe(true);
+    expect(isTimelineRequesterSide(ticket, adminId, [adminId])).toBe(false);
+    expect(isTimelineRequesterSide(ticket, "observer-1", [adminId])).toBe(true);
+  });
+
+  it("initials and actor names for the inbox table", () => {
+    expect(displayUserInitials(tickets[0].creator)).toBe("AL");
+    expect(displayUserInitials("Ada Lovelace")).toBe("AL");
+    expect(
+      ticketActorNames(
+        {
+          creator: tickets[0].creator,
+          assignee: null,
+          actors: [
+            {
+              role: "requester",
+              user: tickets[0].creator,
+              department: null,
+            },
+          ],
+        },
+        "requester",
+      ),
+    ).toBe("Ada Lovelace");
+    expect(
+      ticketActorNames({ creator: tickets[0].creator, assignee: null }, "assignee"),
+    ).toBe("—");
   });
 });

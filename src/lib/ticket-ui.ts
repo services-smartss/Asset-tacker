@@ -48,24 +48,17 @@ const PRIORITY_FROM_LEVEL = {
 } as const;
 
 export const TICKET_CHIP_CLASS =
-  "rounded-md border px-2 py-0.5 text-[10px] font-medium";
-
-const STATUS_INFO = "bg-info-bg text-info-foreground border-transparent";
-const STATUS_WARNING =
-  "bg-warning-bg text-warning-foreground border-transparent";
-const STATUS_SUCCESS =
-  "bg-success-bg text-success-foreground border-transparent";
-const STATUS_MUTED = "bg-muted text-muted-foreground border-border";
+  "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide";
 
 export const TICKET_STATUS_STYLES: Record<string, string> = {
-  new: STATUS_INFO,
-  processing: STATUS_WARNING,
-  pending: STATUS_MUTED,
-  solved: STATUS_SUCCESS,
-  closed: STATUS_MUTED,
-  in_progress: STATUS_WARNING,
-  completed: STATUS_SUCCESS,
-  cancelled: STATUS_MUTED,
+  new: "bg-[#15803d] text-white",
+  processing: "bg-[#c2410c] text-white",
+  pending: "bg-[#57534e] text-white",
+  solved: "bg-[#166534] text-white",
+  closed: "bg-[#1C1F24] text-white",
+  in_progress: "bg-[#c2410c] text-white",
+  completed: "bg-[#166534] text-white",
+  cancelled: "bg-[#1C1F24] text-white",
 };
 
 export const TICKET_STATUS_DOT_STYLES: Record<string, string> = {
@@ -77,17 +70,20 @@ export const TICKET_STATUS_DOT_STYLES: Record<string, string> = {
 };
 
 export const TICKET_TYPE_STYLES: Record<string, string> = {
-  incident: "bg-destructive/10 text-destructive border-destructive/30",
-  request: "bg-background text-foreground border-border",
+  incident: "bg-[#dc2626] text-white",
+  request: "bg-[#2563eb] text-white",
 };
 
 export const TICKET_PRIORITY_STYLES: Record<string, string> = {
-  very_low: STATUS_MUTED,
-  low: STATUS_MUTED,
-  medium: STATUS_INFO,
-  high: STATUS_WARNING,
-  urgent: "bg-destructive/10 text-destructive border-destructive/30",
+  very_low: "bg-[#78716c] text-white",
+  low: "bg-[#78716c] text-white",
+  medium: "bg-[#57534e] text-white",
+  high: "bg-[#c2410c] text-white",
+  urgent: "bg-[#b91c1c] text-white",
 };
+
+export const TICKET_OVERDUE_CHIP = "bg-[#b91c1c] text-white";
+export const TICKET_SLA_PAUSED_CHIP = "bg-[#57534e] text-white";
 
 export function normalizeTicketStatus(status: string) {
   if (status === "in_progress") return "processing";
@@ -137,6 +133,73 @@ export function displayUserName(
 ) {
   if (!user) return "Unassigned";
   return `${user.firstname} ${user.lastname}`.trim();
+}
+
+export function displayUserInitials(
+  user:
+    | { firstname: string; lastname: string }
+    | string
+    | null
+    | undefined,
+) {
+  if (!user) return "?";
+  if (typeof user === "string") {
+    const parts = user.trim().split(/\s+/).filter(Boolean);
+    return (
+      `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase() || "?"
+    );
+  }
+  return (
+    `${user.firstname?.[0] ?? ""}${user.lastname?.[0] ?? ""}`.toUpperCase() ||
+    "?"
+  );
+}
+
+export function ticketActorNames(
+  ticket: {
+    createdBy?: string;
+    creator?: { firstname: string; lastname: string } | null;
+    assignee?: { firstname: string; lastname: string } | null;
+    actors?: {
+      role: string;
+      user?: { firstname: string; lastname: string } | null;
+      department?: { name: string } | null;
+    }[];
+  },
+  role: string,
+) {
+  const named = (ticket.actors ?? [])
+    .filter((actor) => actor.role === role)
+    .map((actor) =>
+      actor.user ? displayUserName(actor.user) : actor.department?.name,
+    )
+    .filter((name): name is string => Boolean(name));
+  if (named.length > 0) return named.join(", ");
+  if (role === "requester") return displayUserName(ticket.creator);
+  if (role === "assignee") {
+    return ticket.assignee ? displayUserName(ticket.assignee) : "—";
+  }
+  return "—";
+}
+
+export function isTimelineRequesterSide(
+  ticket: {
+    createdBy: string;
+    actors?: { role: string; userId?: string | null }[];
+  },
+  userId: string | null | undefined,
+  adminUserIds: Iterable<string> = [],
+) {
+  if (!userId) return true;
+  const roles = (ticket.actors ?? [])
+    .filter((actor) => actor.userId === userId)
+    .map((actor) => actor.role);
+  if (roles.includes("requester") || roles.includes("observer")) return true;
+  if (roles.includes("assignee")) return false;
+  if (ticket.createdBy === userId) return true;
+  const admins = adminUserIds instanceof Set ? adminUserIds : new Set(adminUserIds);
+  if (admins.has(userId)) return false;
+  return true;
 }
 
 export function displayTicketAsset(

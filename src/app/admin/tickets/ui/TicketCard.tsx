@@ -7,6 +7,9 @@ import {
   TICKET_CHIP_CLASS,
   TICKET_PRIORITY_STYLES,
   displayTicketAsset,
+  ticketPriorityLabel,
+  ticketStatusLabel,
+  ticketStatusStyle,
 } from "@/lib/ticket-ui";
 
 interface TicketCardProps {
@@ -41,7 +44,7 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
         isDragging ? "opacity-50" : ""
       }`}
     >
-      <div className="mb-2 flex items-start justify-between">
+      <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           {ticket.ticketNumber != null && (
             <p className="text-muted-foreground font-mono text-[11px]">
@@ -50,9 +53,14 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
           )}
           <h4 className="line-clamp-2 text-sm font-medium">{ticket.title}</h4>
         </div>
-        <span className={`ml-2 ${TICKET_CHIP_CLASS} capitalize ${priorityColor}`}>
-          {ticket.priority}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}>
+            {ticketStatusLabel(ticket.status)}
+          </span>
+          <span className={`${TICKET_CHIP_CLASS} ${priorityColor}`}>
+            {ticketPriorityLabel(ticket.priority)}
+          </span>
+        </div>
       </div>
 
       <p className="mb-3 truncate text-xs">{displayTicketAsset(ticket.asset)}</p>

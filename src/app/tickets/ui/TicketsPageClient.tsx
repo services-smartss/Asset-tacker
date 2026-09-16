@@ -12,27 +12,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { NewTicketForm } from "@/app/user/tickets/ui/NewTicketForm";
-import { TicketDetailPanel } from "./TicketDetailPanel";
+import { TicketDialog } from "./TicketDialog";
 import type { Ticket as TicketRecord, TicketAdminUser, TicketDepartment } from "@/types/ticket";
 import {
   TICKET_CHIP_CLASS,
+  TICKET_OVERDUE_CHIP,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_STYLES,
   TICKET_STATUSES,
   displayTicketAsset,
   displayTicketNumber,
-  displayUserName,
   filterInboxTickets,
+  ticketActorNames,
   ticketPriorityLabel,
   ticketSlaState,
   ticketStatusLabel,
   ticketStatusStyle,
   type TicketQueue,
 } from "@/lib/ticket-ui";
-import { cn } from "@/lib/utils";
 
 interface TicketsPageClientProps {
   tickets: TicketRecord[];
@@ -54,9 +67,7 @@ export default function TicketsPageClient({
   departments,
 }: TicketsPageClientProps) {
   const [tickets, setTickets] = useState<TicketRecord[]>(initialTickets);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialTickets[0]?.id ?? null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
   const [queue, setQueue] = useState<TicketQueue>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,11 +99,14 @@ export default function TicketsPageClient({
 
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedId) ?? null;
-  const visibleSelected =
-    selectedTicket &&
-    filteredTickets.some((ticket) => ticket.id === selectedTicket.id)
-      ? selectedTicket
-      : null;
+
+  const applyTicketChange = (updated: TicketRecord) => {
+    setTickets((prev) =>
+      prev.map((ticket) =>
+        ticket.id === updated.id ? { ...ticket, ...updated } : ticket,
+      ),
+    );
+  };
 
   const handleTicketCreated = (newTicket: TicketRecord) => {
     setTickets((prev) => [
@@ -109,13 +123,16 @@ export default function TicketsPageClient({
       },
       ...prev,
     ]);
-    setSelectedId(newTicket.id);
     setShowNewTicketForm(false);
+    setSelectedId(newTicket.id);
   };
 
   const handleUpdate = async (
     ticketId: string,
-    updates: Partial<TicketRecord> & { solution?: string; solutionAction?: string },
+    updates: Partial<TicketRecord> & {
+      solution?: string;
+      solutionAction?: string;
+    },
   ) => {
     const response = await fetch(`/api/tickets/${ticketId}`, {
       method: "PATCH",
@@ -129,11 +146,7 @@ export default function TicketsPageClient({
     }
 
     const updatedTicket = (await response.json()) as TicketRecord;
-    setTickets((prev) =>
-      prev.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, ...updatedTicket } : ticket,
-      ),
-    );
+    applyTicketChange(updatedTicket);
     if (!updates.solution && !updates.solutionAction) {
       toast.success("Ticket updated");
     }
@@ -206,13 +219,6 @@ export default function TicketsPageClient({
           </Button>
         </div>
       </div>
-
-      {showNewTicketForm && (
-        <NewTicketForm
-          onTicketCreated={handleTicketCreated}
-          onCancel={() => setShowNewTicketForm(false)}
-        />
-      )}
 
       {isAdmin && (
         <div className="flex flex-wrap gap-2">
@@ -300,154 +306,114 @@ export default function TicketsPageClient({
             }
           />
         ) : (
-          <div className="flex min-h-[32rem] md:h-[min(40rem,70vh)]">
-            <div
-              className={cn(
-                "w-full overflow-y-auto md:w-96 md:shrink-0 md:border-r",
-                visibleSelected && "hidden md:block",
-              )}
-            >
-              <p className="text-muted-foreground border-b px-4 py-2 text-xs">
-                {filteredTickets.length} ticket
-                {filteredTickets.length === 1 ? "" : "s"}
-              </p>
-              <ul role="listbox" aria-label="Tickets">
-                {filteredTickets.map((ticket) => {
-                  const isSelected = ticket.id === selectedId;
-                  return (
-                    <li key={ticket.id}>
-                      <button
-                        type="button"
-                        role="option"
-                        onClick={() => setSelectedId(ticket.id)}
-                        aria-selected={isSelected}
-                        className={cn(
-                          "w-full border-b px-4 py-3 text-left transition-colors",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted/50",
-                        )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">#</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Requester</TableHead>
+                <TableHead>Assigned</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>TTR</TableHead>
+                <TableHead>Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTickets.map((ticket) => {
+                const sla = ticketSlaState(ticket);
+                return (
+                  <TableRow
+                    key={ticket.id}
+                    tabIndex={0}
+                    aria-label={`Open ticket ${displayTicketNumber(ticket)}`}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedId(ticket.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedId(ticket.id);
+                      }
+                    }}
+                  >
+                    <TableCell className="font-mono text-xs">
+                      {displayTicketNumber(ticket)}
+                    </TableCell>
+                    <TableCell className="max-w-[18rem] truncate font-medium">
+                      {ticket.title}
+                    </TableCell>
+                    <TableCell className="max-w-[14rem] truncate">
+                      {displayTicketAsset(ticket.asset)}
+                    </TableCell>
+                    <TableCell className="max-w-[10rem] truncate">
+                      {ticketActorNames(ticket, "requester")}
+                    </TableCell>
+                    <TableCell className="max-w-[10rem] truncate">
+                      {ticketActorNames(ticket, "assignee")}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p
-                              className={cn(
-                                "font-mono text-[11px]",
-                                isSelected
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              #{displayTicketNumber(ticket)}
-                            </p>
-                            <p className="truncate text-sm font-medium">
-                              {ticket.title}
-                            </p>
-                            <p
-                              className={cn(
-                                "mt-1 truncate text-xs",
-                                isSelected
-                                  ? "text-primary-foreground/80"
-                                  : "text-foreground",
-                              )}
-                            >
-                              {displayTicketAsset(ticket.asset)}
-                            </p>
-                            <p
-                              className={cn(
-                                "mt-1 truncate text-[11px]",
-                                isSelected
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              {displayUserName(ticket.creator)}
-                              {ticket.assignee
-                                ? ` · ${displayUserName(ticket.assignee)}`
-                                : " · Unassigned"}
-                              {ticket.category ? ` · ${ticket.category}` : ""}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1">
-                            <span
-                              className={`${TICKET_CHIP_CLASS} ${ticketStatusStyle(ticket.status)}`}
-                            >
-                              {ticketStatusLabel(ticket.status)}
-                            </span>
-                            <span
-                              className={`${TICKET_CHIP_CLASS} ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
-                            >
-                              {ticketPriorityLabel(ticket.priority)}
-                            </span>
-                            {ticketSlaState(ticket) === "overdue" && (
-                              <span className={`${TICKET_CHIP_CLASS} bg-destructive/10 text-destructive border-destructive/30`}>
-                                Overdue
-                              </span>
-                            )}
-                            {ticket.timeToResolve &&
-                              ticketSlaState(ticket) === "ok" && (
-                                <span className={`${TICKET_CHIP_CLASS} bg-muted text-muted-foreground`}>
-                                  TTR {new Date(ticket.timeToResolve).toLocaleDateString()}
-                                </span>
-                              )}
-                          </div>
-                        </div>
-                        <p
-                          className={cn(
-                            "mt-2 text-[11px]",
-                            isSelected
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          Updated {new Date(ticket.updatedAt).toLocaleString()}
-                        </p>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div
-              className={cn(
-                "min-w-0 flex-1",
-                !visibleSelected && "hidden md:flex",
-                visibleSelected && "flex",
-              )}
-            >
-              {visibleSelected ? (
-                <TicketDetailPanel
-                  ticket={visibleSelected}
-                  isAdmin={isAdmin}
-                  currentUserId={currentUserId}
-                  adminUsers={adminUsers}
-                  orgUsers={orgUsers}
-                  departments={departments}
-                  onBack={() => setSelectedId(null)}
-                  onUpdate={handleUpdate}
-                  onAddComment={handleAddComment}
-                  onTicketChange={(updated) =>
-                    setTickets((prev) =>
-                      prev.map((ticket) =>
-                        ticket.id === updated.id
-                          ? { ...ticket, ...updated }
-                          : ticket,
-                      ),
-                    )
-                  }
-                />
-              ) : (
-                <EmptyState
-                  compact
-                  title="Select a ticket"
-                  description="Choose a request from the queue to assign, update status, or reply."
-                />
-              )}
-            </div>
-          </div>
+                        {ticketStatusLabel(ticket.status)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`${TICKET_CHIP_CLASS} ${TICKET_PRIORITY_STYLES[ticket.priority] || TICKET_PRIORITY_STYLES.medium}`}
+                      >
+                        {ticketPriorityLabel(ticket.priority)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {sla === "overdue" ? (
+                        <span className={`${TICKET_CHIP_CLASS} ${TICKET_OVERDUE_CHIP}`}>
+                          Overdue
+                        </span>
+                      ) : ticket.timeToResolve ? (
+                        new Date(ticket.timeToResolve).toLocaleDateString()
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                      {new Date(ticket.updatedAt).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
+
+      <Dialog open={showNewTicketForm} onOpenChange={setShowNewTicketForm}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogTitle>New Ticket</DialogTitle>
+          <NewTicketForm
+            embedded
+            onTicketCreated={handleTicketCreated}
+            onCancel={() => setShowNewTicketForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <TicketDialog
+        ticket={selectedTicket}
+        open={selectedTicket != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+        adminUsers={adminUsers}
+        orgUsers={orgUsers}
+        departments={departments}
+        onUpdate={handleUpdate}
+        onAddComment={handleAddComment}
+        onTicketChange={applyTicketChange}
+      />
     </div>
   );
 }

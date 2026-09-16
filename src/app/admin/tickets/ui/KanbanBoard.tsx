@@ -12,12 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { TicketColumn } from "./TicketColumn";
 import { TicketCard } from "./TicketCard";
-import { TicketDetailPanel } from "@/app/tickets/ui/TicketDetailPanel";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { TicketDialog } from "@/app/tickets/ui/TicketDialog";
 import { toast } from "sonner";
 import type { Ticket, TicketAdminUser, TicketDepartment } from "@/types/ticket";
 import { TICKET_STATUSES, normalizeTicketStatus, ticketStatusDotStyle } from "@/lib/ticket-ui";
@@ -51,6 +46,14 @@ export default function KanbanBoard({
       },
     }),
   );
+
+  const applyTicketChange = (updated: Ticket) => {
+    setTickets((prev) =>
+      prev.map((ticket) =>
+        ticket.id === updated.id ? { ...ticket, ...updated } : ticket,
+      ),
+    );
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const ticket = tickets.find((t) => t.id === event.active.id);
@@ -86,15 +89,7 @@ export default function KanbanBoard({
       }
 
       const updatedTicket = await response.json();
-
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>
-          ticket.id === ticketId
-            ? { ...ticket, ...updatedTicket }
-            : ticket,
-        ),
-      );
-
+      applyTicketChange(updatedTicket);
       toast.success("Ticket status updated");
     } catch (error) {
       console.error("Error updating ticket:", error);
@@ -121,14 +116,7 @@ export default function KanbanBoard({
       }
 
       const updatedTicket = await response.json();
-
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>
-          ticket.id === ticketId
-            ? { ...ticket, ...updatedTicket }
-            : ticket,
-        ),
-      );
+      applyTicketChange(updatedTicket);
 
       if (!updates.solution && !updates.solutionAction) {
         toast.success("Ticket updated");
@@ -199,39 +187,21 @@ export default function KanbanBoard({
         </DragOverlay>
       </DndContext>
 
-      <Dialog
+      <TicketDialog
+        ticket={selectedTicket}
         open={selectedTicket != null}
         onOpenChange={(open) => {
           if (!open) setSelectedId(null);
         }}
-      >
-        <DialogContent className="flex h-[90vh] max-w-5xl flex-col gap-0 overflow-hidden p-0 sm:rounded-lg">
-          <DialogTitle className="sr-only">
-            {selectedTicket?.title ?? "Ticket"}
-          </DialogTitle>
-          {selectedTicket ? (
-            <TicketDetailPanel
-              ticket={selectedTicket}
-              isAdmin
-              currentUserId={currentUserId}
-              adminUsers={adminUsers}
-              orgUsers={orgUsers}
-              departments={departments}
-              className="h-full min-h-0 pr-10"
-              onBack={() => setSelectedId(null)}
-              onUpdate={handleUpdateTicket}
-              onAddComment={handleAddComment}
-              onTicketChange={(updated) =>
-                setTickets((prev) =>
-                  prev.map((ticket) =>
-                    ticket.id === updated.id ? { ...ticket, ...updated } : ticket,
-                  ),
-                )
-              }
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+        isAdmin
+        currentUserId={currentUserId}
+        adminUsers={adminUsers}
+        orgUsers={orgUsers}
+        departments={departments}
+        onUpdate={handleUpdateTicket}
+        onAddComment={handleAddComment}
+        onTicketChange={applyTicketChange}
+      />
     </>
   );
 }
