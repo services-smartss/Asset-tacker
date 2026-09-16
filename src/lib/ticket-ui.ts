@@ -304,6 +304,35 @@ export function ticketSlaState(
   return "ok";
 }
 
+export function ticketSiteDepartmentId(
+  ticket: {
+    actors?: {
+      role: string;
+      departmentId?: string | null;
+    }[];
+  },
+): string | null {
+  const site = (ticket.actors ?? []).find(
+    (actor) => actor.role === "assignee" && actor.departmentId,
+  );
+  return site?.departmentId ?? null;
+}
+
+export function ticketSiteDepartmentName(
+  ticket: {
+    actors?: {
+      role: string;
+      departmentId?: string | null;
+      department?: { name: string } | null;
+    }[];
+  },
+): string | null {
+  const site = (ticket.actors ?? []).find(
+    (actor) => actor.role === "assignee" && actor.departmentId,
+  );
+  return site?.department?.name ?? null;
+}
+
 export type TicketActorLike = {
   role: string;
   userId?: string | null;

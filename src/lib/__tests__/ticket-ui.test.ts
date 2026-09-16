@@ -12,6 +12,8 @@ import {
   isTimelineRequesterSide,
   shortTicketId,
   ticketActorNames,
+  ticketSiteDepartmentId,
+  ticketSiteDepartmentName,
   ticketStatusLabel,
   ticketTypeLabel,
 } from "../ticket-ui";
@@ -231,6 +233,24 @@ describe("ticket-ui", () => {
     expect(isTimelineRequesterSide(ticket, "user-1", [adminId])).toBe(true);
     expect(isTimelineRequesterSide(ticket, adminId, [adminId])).toBe(false);
     expect(isTimelineRequesterSide(ticket, "observer-1", [adminId])).toBe(true);
+  });
+
+  it("reads site from assignee department actors", () => {
+    const ticket = {
+      actors: [
+        { role: "requester", userId: "user-1", departmentId: null },
+        {
+          role: "assignee",
+          userId: null,
+          departmentId: "dept-bkk",
+          department: { name: "Bangkok" },
+        },
+      ],
+    };
+    expect(ticketSiteDepartmentId(ticket)).toBe("dept-bkk");
+    expect(ticketSiteDepartmentName(ticket)).toBe("Bangkok");
+    expect(ticketSiteDepartmentId({ actors: [] })).toBeNull();
+    expect(ticketSiteDepartmentName({ actors: [] })).toBeNull();
   });
 
   it("initials and actor names for the inbox table", () => {

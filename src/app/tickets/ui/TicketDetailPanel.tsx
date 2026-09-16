@@ -40,6 +40,8 @@ import {
   isTimelineRequesterSide,
   normalizeTicketStatus,
   ticketPriorityLabel,
+  ticketSiteDepartmentId,
+  ticketSiteDepartmentName,
   ticketSlaState,
   ticketStatusLabel,
   ticketStatusStyle,
@@ -194,6 +196,8 @@ export function TicketDetailPanel({
   const pendingValidation = ticket.validations.find(
     (item) => item.status === "waiting" && item.targetUserId === currentUserId,
   );
+  const siteDepartmentId = ticketSiteDepartmentId(ticket);
+  const siteDepartmentName = ticketSiteDepartmentName(ticket);
 
   useEffect(() => {
     const node = timelineRef.current;
@@ -264,6 +268,29 @@ export function TicketDetailPanel({
     }
     const updated = (await response.json()) as Ticket;
     onTicketChange?.(updated);
+  };
+
+  const setSiteDepartment = async (departmentId: string | null) => {
+    try {
+      const nextActors = ticket.actors.filter(
+        (actor) => !(actor.role === "assignee" && actor.departmentId),
+      );
+      if (departmentId) {
+        nextActors.push({
+          id: `tmp-site-${departmentId}`,
+          role: "assignee",
+          userId: null,
+          departmentId,
+          user: null,
+          department:
+            departments.find((department) => department.id === departmentId) ??
+            null,
+        });
+      }
+      await saveActors(nextActors);
+    } catch {
+      // saveActors already toasts
+    }
   };
 
   return (
@@ -432,6 +459,39 @@ export function TicketDetailPanel({
         </div>
 
         <aside className="w-full shrink-0 space-y-4 overflow-y-auto border-t px-4 py-4 lg:w-[30%] lg:border-t-0 lg:border-l">
+          <div>
+            <Label htmlFor="ticket-site">{t("ticket.site")}</Label>
+            {isAdmin && departments.length > 0 ? (
+              <>
+                <Select
+                  value={siteDepartmentId ?? "none"}
+                  onValueChange={(value) =>
+                    setSiteDepartment(value === "none" ? null : value)
+                  }
+                >
+                  <SelectTrigger id="ticket-site" className="mt-1">
+                    <SelectValue placeholder={t("ticket.siteNone")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("ticket.siteNone")}</SelectItem>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {t("ticket.siteHint")}
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm">
+                {siteDepartmentName ?? t("ticket.siteNone")}
+              </p>
+            )}
+          </div>
+
           <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             {t("ticket.actors")}
           </p>

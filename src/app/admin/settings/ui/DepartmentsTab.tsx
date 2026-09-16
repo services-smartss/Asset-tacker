@@ -182,7 +182,8 @@ export default function DepartmentsTab() {
         <div>
           <h2 className="text-lg font-semibold">Departments</h2>
           <p className="text-foreground-500 text-sm">
-            Manage organizational departments
+            Manage departments. Use one department per site to route support
+            tickets; assign support users (not org admins) to that department.
           </p>
         </div>
         <Button onClick={openCreate} size="sm">

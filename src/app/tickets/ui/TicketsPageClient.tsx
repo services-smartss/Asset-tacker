@@ -244,18 +244,25 @@ export default function TicketsPageClient({
       </div>
 
       {isAdmin && (
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(TICKET_QUEUE_I18N) as TicketQueue[]).map((value) => (
-            <Button
-              key={value}
-              type="button"
-              size="sm"
-              variant={queue === value ? "default" : "outline"}
-              onClick={() => setQueue(value)}
-            >
-              {t(TICKET_QUEUE_I18N[value])}
-            </Button>
-          ))}
+        <div className="space-y-1">
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(TICKET_QUEUE_I18N) as TicketQueue[]).map((value) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={queue === value ? "default" : "outline"}
+                onClick={() => setQueue(value)}
+              >
+                {t(TICKET_QUEUE_I18N[value])}
+              </Button>
+            ))}
+          </div>
+          {queue === "mine" && (
+            <p className="text-muted-foreground text-xs">
+              {t("ticket.queue.mineHint")}
+            </p>
+          )}
         </div>
       )}
 
@@ -414,6 +421,7 @@ export default function TicketsPageClient({
           <DialogTitle>{t("ticket.new")}</DialogTitle>
           <NewTicketForm
             embedded
+            departments={departments}
             onTicketCreated={handleTicketCreated}
             onCancel={() => setShowNewTicketForm(false)}
           />

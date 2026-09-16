@@ -22,18 +22,20 @@ import {
   computePriority,
   ticketPriorityLabel,
 } from "@/lib/ticket-ui";
-import type { Ticket, TicketAsset } from "@/types/ticket";
+import type { Ticket, TicketAsset, TicketDepartment } from "@/types/ticket";
 
 interface NewTicketFormProps {
   onTicketCreated: (ticket: Ticket) => void;
   onCancel: () => void;
   embedded?: boolean;
+  departments?: TicketDepartment[];
 }
 
 export function NewTicketForm({
   onTicketCreated,
   onCancel,
   embedded = false,
+  departments = [],
 }: NewTicketFormProps) {
   const { t } = useI18n();
   const { categories } = useTicketCategories();
@@ -43,6 +45,7 @@ export function NewTicketForm({
   const [impact, setImpact] = useState(3);
   const [type, setType] = useState("incident");
   const [category, setCategory] = useState("");
+  const [siteDepartmentId, setSiteDepartmentId] = useState("");
   const [asset, setAsset] = useState<TicketAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,6 +85,7 @@ export function NewTicketForm({
           type,
           category: category || null,
           assetId: asset?.assetid ?? null,
+          siteDepartmentId: siteDepartmentId || null,
         }),
       });
 
@@ -144,6 +148,33 @@ export function NewTicketForm({
             </Select>
           </div>
         </div>
+
+        {departments.length > 0 && (
+          <div>
+            <Label htmlFor="site">{t("ticket.site")}</Label>
+            <Select
+              value={siteDepartmentId || "none"}
+              onValueChange={(value) =>
+                setSiteDepartmentId(value === "none" ? "" : value)
+              }
+            >
+              <SelectTrigger id="site" className="mt-1">
+                <SelectValue placeholder={t("ticket.site")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("ticket.siteNone")}</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {t("ticket.siteHint")}
+            </p>
+          </div>
+        )}
 
         <div>
           <Label>{t("ticket.item")}</Label>

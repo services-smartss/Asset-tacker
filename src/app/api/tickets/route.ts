@@ -173,7 +173,7 @@ export async function POST(req: Request) {
     const user = await requireApiAuth();
     const body = await req.json();
 
-    const { title, description, type, category, assetId, urgency, impact } =
+    const { title, description, type, category, assetId, urgency, impact, siteDepartmentId } =
       body || {};
 
     if (!title) {
@@ -184,6 +184,11 @@ export async function POST(req: Request) {
     const linkedAssetId =
       typeof assetId === "string" && uuidSchema.safeParse(assetId).success
         ? assetId
+        : null;
+    const siteDeptId =
+      typeof siteDepartmentId === "string" &&
+      uuidSchema.safeParse(siteDepartmentId).success
+        ? siteDepartmentId
         : null;
 
     if (linkedAssetId) {
@@ -196,11 +201,27 @@ export async function POST(req: Request) {
       }
     }
 
-    const matrix = priorityFromBody({ urgency, impact });
     const orgContext = await getOrganizationContext();
-    const policy = await ensureSlaPolicy(
-      user.organizationId ?? orgContext?.organization?.id,
-    );
+    const orgId = user.organizationId ?? orgContext?.organization?.id;
+
+    if (siteDeptId) {
+      const department = await prisma.department.findFirst({
+        where: {
+          id: siteDeptId,
+          ...(orgId ? { organizationId: orgId } : {}),
+        },
+        select: { id: true },
+      });
+      if (!department) {
+        return NextResponse.json(
+          { error: "Site department not found" },
+          { status: 400 },
+        );
+      }
+    }
+
+    const matrix = priorityFromBody({ urgency, impact });
+    const policy = await ensureSlaPolicy(orgId);
     const now = new Date();
     const sla = slaDatesForCreate(now, policy);
 
@@ -220,10 +241,20 @@ export async function POST(req: Request) {
           connect: { userid: user.id! },
         },
         actors: {
-          create: {
-            role: "requester",
-            userId: user.id!,
-          },
+          create: [
+            {
+              role: "requester",
+              userId: user.id!,
+            },
+            ...(siteDeptId
+              ? [
+                  {
+                    role: "assignee" as const,
+                    departmentId: siteDeptId,
+                  },
+                ]
+              : []),
+          ],
         },
         ...(linkedAssetId
           ? { asset: { connect: { assetid: linkedAssetId } } }

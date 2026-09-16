@@ -178,6 +178,16 @@ const FAQ_SECTIONS: FAQSection[] = [
     adminOnly: true,
     items: [
       {
+        question: "How do I split support by site?",
+        answer:
+          "Use Departments as site support queues (not separate organizations). 1) Create one department per site (e.g. Bangkok, Chonburi) under Admin Settings → Departments. 2) Create support users without Admin, and set each user's Department to that site. 3) When creating a ticket, choose Site — the ticket is assigned to that department so site support can see it. Org admins still see all tickets. Tag assets with Locations for branch inventory; that is separate from ticket site routing.",
+        links: [
+          { label: "Departments", href: "/admin/settings?tab=departments" },
+          { label: "Tickets", href: "/tickets" },
+          { label: "Users", href: "/user" },
+        ],
+      },
+      {
         question: "How do I add a new user?",
         answer:
           "Go to Users and click 'Create User'. Choose a password mode: manual (set password), generate (random password emailed), or invite (magic link emailed). You can also import users via CSV or sync from LDAP/Active Directory.",
